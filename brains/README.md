@@ -6,7 +6,6 @@ Price history, scam checks, ranking, lowball offers, sell advice. Plain dicts in
 
 ```python
 import brains
-brains.attach(app)                                 # once: model calls go through AgentField app.ai()
 comps    = brains.comps(sold)                      # list[Comps], one per marketplace (sync, no AI)
 verdicts = await brains.evaluate(listings, comps)  # list[Verdict], one AI call per non-scam listing
 ranked   = await brains.rank(listings, verdicts)   # Ranked: top ≤5 with draft_message, skipped ≤5 with reason
@@ -15,8 +14,8 @@ advice   = await brains.sell_advice(item, comps)   # {"asking_price_jpy", "quick
 ```
 
 - `evaluate` must run before `rank` in the same process (rank reuses the rule flags for skip reasons / drafts).
-- Want brains as nodes in the AgentField graph? `app.include_router(brains.router)` exposes reasoners
-  `brains_price_history`, `brains_scam_check`, `brains_ranking`, `brains_sell` (prefix `brains`).
+- `USE_AGENTFIELD=1`: run `python -m brains.node` (node id `brains`, port `BRAINS_PORT`=8003). Reasoners
+  `comps` / `evaluate` / `rank` / `sell_advice` match `app.call("brains.<fn>")`; model = `AI_MODEL` env via LiteLLM.
 - No AgentField app attached → falls back to Anthropic API if `ANTHROPIC_API_KEY` is set → else rules-only
   templates. `BRAINS_LLM=0` forces rules-only (fast, deterministic; use if the model is slow on stage).
 - `comps` with 0-1 sold items for a marketplace → `median_jpy`/`p25_jpy`/`p75_jpy` are `null`; skip those in the 📊 line.
@@ -36,7 +35,8 @@ regexes), `seller.review_count`, `seller.rating` (0-5), `seller.account_age` (ra
 | price 40-70% of median | counts as sketchy only if something else is sketchy |
 | seller: < 3 months old, < 5 reviews, rating < 4.0 | sketchy |
 | LINE / WhatsApp / bank transfer / 直接取引 / email in text | scam |
-| description < 60 chars | sketchy |
+| description too short (< 50 chars, Japanese chars count 2.5×) | sketchy |
+| 写真はイメージです / stock photos | sketchy |
 | ジャンク / 部品取り / 動作未確認 / for parts | sketchy + con |
 | same image URL in another seller's listing | sketchy |
 

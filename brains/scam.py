@@ -48,7 +48,7 @@ def account_age_months(raw, today: date | None = None) -> float | None:
     if raw is None:
         return None
     if isinstance(raw, (int, float)):
-        return float(raw)
+        return raw / 30  # schemas.py: int = days since account creation
     s, today = str(raw), today or date.today()
     if m := _EN_MONTH.search(s):
         y, mo = int(m.group(2)), _MONTHS.index(m.group(1).lower()[:3]) + 1
@@ -107,11 +107,16 @@ def off_platform(listing: dict) -> list[dict]:
 
 # ---------- listing quality ----------
 
+_STOCK = re.compile(r"写真は(?:いずれも|全て|すべて)?イメージ|イメージ(?:画像|写真)です|画像はイメージ|stock\s*(?:photo|image)s?|photos?\s*(?:are|is)\s*for\s*reference", re.I)
+
 def listing_quality(listing: dict) -> list[dict]:
     desc = (listing.get("description") or "").strip()
     out = []
-    if listing.get("description") is not None and len(desc) < 60:
+    cjk = sum(1 for ch in desc if ord(ch) >= 0x3000)  # Japanese says more per character
+    if listing.get("description") is not None and len(desc) + 1.5 * cjk < 50:
         out.append(flag("vague", "sketchy", "vague description", "説明が少ない"))
+    if _STOCK.search(_text(listing)):
+        out.append(flag("stock_photos", "sketchy", "uses stock photos, not the actual item", "写真がイメージ画像"))
     if not listing.get("image_urls"):
         out.append(flag("no_photos", "info", "no photos found", "写真が見当たらない"))
     return out

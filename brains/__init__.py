@@ -2,7 +2,8 @@
 
 Shared-contract API:
     comps(sold)                      -> list[Comps]
-    await evaluate(listings, comps)  -> list[Verdict]
+    await evaluate(listings, comps, retail=None) -> list[Verdict]   (sold items: deal_score 0, "sold": True)
+    await retail_price(query)        -> {"price_jpy", "kind", "source", "url"} | None   (new price in Japan)
     await rank(listings, verdicts)   -> Ranked
     await sell_advice(item, comps)   -> {"asking_price_jpy", "draft_listing", ...}
 
@@ -22,9 +23,10 @@ from . import llm
 from .comps import comps, pooled
 from .evaluate import evaluate
 from .rank import rank
+from .retail import retail_price
 from .sell import sell_advice
 
-__all__ = ["comps", "evaluate", "rank", "sell_advice", "pooled", "attach"]
+__all__ = ["comps", "evaluate", "rank", "sell_advice", "retail_price", "pooled", "attach"]
 
 
 def attach(app) -> None:

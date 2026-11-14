@@ -25,7 +25,7 @@ def _round500(x: float) -> int:
     return int(round(x / 500) * 500)
 
 
-async def sell_advice(item: str, comps: list[dict]) -> dict:
+async def sell_advice(item: str, comps: list[dict], retail: dict | None = None) -> dict:
     ref = pooled(comps)
     by_mp = {c["marketplace"]: c["median_jpy"] for c in comps or [] if c.get("median_jpy")}
     if ref:
@@ -35,8 +35,11 @@ async def sell_advice(item: str, comps: list[dict]) -> dict:
     else:
         quick = patient = asking = None
         best_mp = None
+    new_price = (retail or {}).get("price_jpy")
+    if new_price and asking and asking > new_price * 0.9:  # nobody buys used at (almost) the new price
+        asking = _round500(new_price * 0.85)
 
-    draft = await llm.structured(SYSTEM, json.dumps({"item": item, "sold_prices": ref,
+    draft = await llm.structured(SYSTEM, json.dumps({"item": item, "sold_prices": ref, "new_price_in_japan": retail,
                                                      "asking_price_jpy": asking}, ensure_ascii=False), ListingDraft)
     if draft:
         text = f"{draft.title_ja}\n\n{draft.description_ja}\n\n({draft.summary_en})"
@@ -51,4 +54,5 @@ async def sell_advice(item: str, comps: list[dict]) -> dict:
         "best_marketplace": best_mp,  # where it sells for the most (eBay excludes fees/shipping)
         "median_by_marketplace": by_mp,
         "draft_listing": text,
+        "retail": retail,  # new price in Japan (brains.retail_price), or None
     }

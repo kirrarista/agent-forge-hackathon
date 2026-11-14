@@ -168,6 +168,8 @@ async def run_buy(query: str, budget_jpy: int | None = None) -> dict:
         return _load_demo("buy")
 
     marketplaces = list(MARKETPLACES)
+    # New price in Japan (brains.retail_price): independent of scouts, so it runs alongside them.
+    retail_task = asyncio.create_task(_retail(query))
     # scouts/README: call search BEFORE sold_prices — sold-out items spotted while
     # searching are reused as sold prices, so these must not run in parallel.
     listings = await _call(
@@ -175,9 +177,19 @@ async def run_buy(query: str, budget_jpy: int | None = None) -> dict:
     )
     sold = await _call(SCOUT_NODE, "sold_prices", query=query, marketplaces=marketplaces)
     comps = await _call(BRAIN_NODE, "comps", sold=sold)
-    verdicts = await _call(BRAIN_NODE, "evaluate", listings=listings, comps=comps)
+    retail = await retail_task
+    verdicts = await _call(BRAIN_NODE, "evaluate", listings=listings, comps=comps, retail=retail)
     ranked = await _call(BRAIN_NODE, "rank", listings=listings, verdicts=verdicts)
-    return {"comps": comps, "ranked": ranked, "stats": _stats(query, budget_jpy, listings, sold, ranked)}
+    return {"comps": comps, "ranked": ranked, "retail": retail,
+            "stats": _stats(query, budget_jpy, listings, sold, ranked)}
+
+
+async def _retail(query: str) -> dict | None:
+    """New/retail price lookup; never fails the run."""
+    try:
+        return await _call(BRAIN_NODE, "retail_price", query=query)
+    except Exception:
+        return None
 
 
 async def run_sell(item: str) -> dict:
@@ -197,9 +209,10 @@ async def run_sell(item: str) -> dict:
     if DEMO_MODE:
         return _load_demo("sell")
 
+    retail_task = asyncio.create_task(_retail(item))
     sold = await _call(SCOUT_NODE, "sold_prices", query=item, marketplaces=list(MARKETPLACES))
     comps = await _call(BRAIN_NODE, "comps", sold=sold)
-    advice = await _call(BRAIN_NODE, "sell_advice", item=item, comps=comps)
+    advice = await _call(BRAIN_NODE, "sell_advice", item=item, comps=comps, retail=await retail_task)
     return {**advice, "comps": comps}
 
 

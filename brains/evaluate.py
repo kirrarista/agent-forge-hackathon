@@ -25,8 +25,9 @@ SYSTEM = """You judge second-hand marketplace listings in Japan for a buyer who 
 You get one listing (page text may be Japanese and include site navigation noise), recent sold prices
 for the same item, and red flags our rules already found. Write pros and cons a buyer would care about:
 condition details, accessories/box included, shutter count / usage, seller reputation, price vs sold
-prices. Be concrete and short (max 70 chars each, English, no emoji). Do not repeat the price itself in
-every line. A price under the sold median is a pro, never a con (too-cheap scam pricing is already
+prices (and vs the new price in Japan, if given). Be concrete and short (max 70 chars each, English, no emoji). Do not repeat the price itself in
+every line. The price comparison (vs sold median and new price) is already shown on its own
+line, so spend pros on the item and seller, not on price. A low price is never a con (too-cheap scam pricing is already
 in the rule flags). Do not invent facts that are not in the text; if photos or details are unknown, leave it out. The rule flags are correct: include the
 serious ones as cons. deal_score: 50 means priced at the sold median, 100 means well under the median
 from a trusted seller in good condition; stay within 10 points of the rule_score you are given."""
@@ -84,12 +85,21 @@ def template_pros_cons(listing: dict, ref: dict | None, flags: list[dict]) -> tu
     return pros[:3] or ["listed within budget"], cons[:3]
 
 
-async def evaluate_one(listing: dict, comps_list: list[dict], all_listings: list[dict]) -> dict:
+async def evaluate_one(listing: dict, comps_list: list[dict], all_listings: list[dict],
+                       retail: dict | None = None) -> dict:
+    lid = listing.get("id")
+    if scam.is_sold(listing):  # never recommend something you can't buy
+        FLAGS[lid], REFS[lid] = [], None
+        return {"listing_id": lid, "risk": "ok", "deal_score": 0, "pros": [], "cons": ["already sold"],
+                "suggested_offer_jpy": None, "sold": True}
     ref = reference(comps_list, listing.get("marketplace"))
     flags = scam.check(listing, ref, all_listings)
     risk = scam.risk(flags)
     base = rule_score(listing, ref, flags, risk)
     pros, cons = template_pros_cons(listing, ref, flags)
+    new_price, price = (retail or {}).get("price_jpy"), listing.get("price_jpy")
+    if new_price and price and price < new_price and len(pros) < 3:
+        pros.append(f"{round((1 - price / new_price) * 100)}% below the new price (¥{new_price:,})")
     score = base
 
     if risk != "scam":  # don't spend model calls on listings we're skipping anyway
@@ -99,6 +109,7 @@ async def evaluate_one(listing: dict, comps_list: list[dict], all_listings: list
             "sold_prices": ref,
             "rule_flags": [f["en"] for f in flags],
             "rule_score": base,
+            "new_price_in_japan": retail,
         }
         ai = await llm.structured(SYSTEM, json.dumps(payload, ensure_ascii=False), VerdictAI)
         if ai:
@@ -109,7 +120,6 @@ async def evaluate_one(listing: dict, comps_list: list[dict], all_listings: list
             cons = (rule_cons + [c for c in extra if c not in rule_cons])[:3]
             score = max(1, min(100, max(base - 10, min(base + 10, ai.deal_score))))
 
-    lid = listing.get("id")
     FLAGS[lid], REFS[lid] = flags, ref
     return {
         "listing_id": lid,
@@ -118,8 +128,11 @@ async def evaluate_one(listing: dict, comps_list: list[dict], all_listings: list
         "pros": pros,
         "cons": cons,
         "suggested_offer_jpy": None if risk == "scam" else suggested_offer(listing, ref, flags),
+        "sold_median_jpy": (ref or {}).get("median_jpy"),  # what this item has recently sold for, used
+        "new_price_jpy": (retail or {}).get("price_jpy"),   # what it costs new in Japan
     }
 
 
-async def evaluate(listings: list[dict], comps: list[dict]) -> list[dict]:
-    return list(await asyncio.gather(*(evaluate_one(l, comps, listings) for l in listings or [])))
+async def evaluate(listings: list[dict], comps: list[dict], retail: dict | None = None) -> list[dict]:
+    """`retail` (optional) is brains.retail_price(query): adds 'X% below the new price' pros."""
+    return list(await asyncio.gather(*(evaluate_one(l, comps, listings, retail) for l in listings or [])))

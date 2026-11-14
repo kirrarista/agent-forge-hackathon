@@ -170,6 +170,31 @@ def reused_photos(listing: dict, all_listings: list[dict]) -> list[dict]:
     return []
 
 
+# ---------- already sold / ended ----------
+
+# Strong phrases only: page chrome (recommended-item badges) also says "SOLD" / 売り切れ.
+_SOLD = {
+    "mercari": r"売り切れました|この商品は売り切れ|購入手続き中|取引中です",
+    "yahoo_auctions": r"このオークションは終了|オークションは終了しました|落札者[：:]|落札されました|"
+                      r"このオークションは出品者によって取り消され",
+    "jimoty": r"掲載期間が終了|取引終了|受付終了|募集終了|掲載終了|取引中",
+    "ebay": r"This listing sold on|This listing was ended|Bidding has ended|This item is out of stock|"
+            r"This listing has ended|item is no longer available",
+}
+_SOLD_ANY = r"売約済|売却済|完売しました|^\s*[【\[(]?\s*SOLD(?:\s*OUT)?\s*[】\])]?"
+
+
+def is_sold(listing: dict) -> bool:
+    """True if the listing page says it's sold / ended / reserved. Scouts already drops most of these;
+    this is the last guard so the bot never recommends something you can't buy."""
+    if listing.get("_sold") or listing.get("sold"):
+        return True
+    rx = _SOLD.get(listing.get("marketplace") or "", "")
+    rx = f"{rx}|{_SOLD_ANY}" if rx else _SOLD_ANY
+    title = listing.get("title") or ""
+    return bool(re.search(rx, f"{title}\n{clean(listing.get('description'))}", re.I | re.M))
+
+
 # ---------- combine ----------
 
 def check(listing: dict, ref: dict | None, all_listings: list[dict]) -> list[dict]:

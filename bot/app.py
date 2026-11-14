@@ -14,6 +14,7 @@ import os
 
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler
 
+import obs
 from bot import handlers
 
 
@@ -25,7 +26,9 @@ def main() -> None:
     app.add_handler(CommandHandler("start", handlers.start))
     app.add_handler(CommandHandler("buy", handlers.buy))
     app.add_handler(CommandHandler("sell", handlers.sell))
+    app.add_handler(CommandHandler("stats", handlers.stats))
     app.add_handler(CallbackQueryHandler(handlers.on_button))
+    obs.emit("bot_started", pid=os.getpid())
     app.run_polling()
 
 

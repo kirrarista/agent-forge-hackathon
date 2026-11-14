@@ -77,6 +77,24 @@ python -m scouts save "Sony A7III" --budget 90000   # writes demo_data/
 Then `USE_FAKE_DATA=0`, `DEMO_MODE=1`. Note: the orchestrator's demo path currently expects
 `demo_data/buy.json`; aligning it with scouts' `listings.json`/`sold.json` output is a pending fix.
 
+## 6. Observability (activity log + dashboard)
+
+Stdlib only, on by default (`OBS_ENABLED=1`). Every run, button tap, stage timing and error
+is appended to `obs_data/events.jsonl`.
+
+```powershell
+python -m obs.dashboard     # second terminal → http://localhost:8787
+```
+
+The page shows live counters, recent runs and an event feed; it complements AgentField's
+workflow graph. In Telegram, `/stats` prints the same counters plus the last 10 runs.
+
+- Run the bot and the dashboard from the repo root so `OBS_LOG` resolves to the same file.
+- Disable with `OBS_ENABLED=0` (the bot still works; `/stats` reports it's off).
+- Reset history: delete `obs_data/`. Change port: `OBS_PORT`.
+- Julius/Kiril can log their own events later with one line:
+  `obs.emit("llm_call", model=…, latency_ms=…)` inside `brains/llm.py`.
+
 ## Troubleshooting
 
 | Symptom | Fix |
@@ -87,3 +105,4 @@ Then `USE_FAKE_DATA=0`, `DEMO_MODE=1`. Note: the orchestrator's demo path curren
 | Emoji/Japanese garbled in console | Use Windows Terminal, or `chcp 65001` first (Telegram itself renders fine) |
 | Bot silent, no errors | Wrong token in `.env`, or another `python -m bot.app` instance is polling — kill it |
 | `⚠️ Search failed: ... not available yet` | Live mode before scouts/brains landed — back to `USE_FAKE_DATA=1` |
+| Dashboard empty / "waiting for bot" | Bot + dashboard must share `OBS_LOG` (run both from repo root); check `OBS_ENABLED=1` |

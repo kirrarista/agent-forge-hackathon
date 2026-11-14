@@ -10,6 +10,14 @@ For Ivan: direct import works as-is. With USE_AGENTFIELD=1 run `python -m brains
 an AgentField node "brains" with reasoners comps / evaluate / rank / sell_advice, matching
 app.call("brains.<fn>"), and routes its model calls through app.ai().
 """
+from pathlib import Path
+
+try:  # pick up ANTHROPIC_API_KEY / OPENAI_API_KEY / AI_MODEL from the repo .env
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+except ImportError:
+    pass
+
 from . import llm
 from .comps import comps, pooled
 from .evaluate import evaluate

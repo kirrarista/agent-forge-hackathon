@@ -48,7 +48,7 @@ def account_age_months(raw, today: date | None = None) -> float | None:
     if raw is None:
         return None
     if isinstance(raw, (int, float)):
-        return raw / 30  # schemas.py: int = days since account creation
+        return float(raw)  # schemas.py: numeric = months
     s, today = str(raw), today or date.today()
     if m := _EN_MONTH.search(s):
         y, mo = int(m.group(2)), _MONTHS.index(m.group(1).lower()[:3]) + 1

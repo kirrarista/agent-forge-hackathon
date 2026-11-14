@@ -34,19 +34,35 @@ def _text(listing: dict) -> str:
 
 # ---------- price vs sold average ----------
 
+def landed_price(listing: dict) -> int | None:
+    """What it actually costs a buyer in Japan. eBay prices exclude international shipping and
+    import tax/handling (~10% + ¥3,000 is a fair rough estimate for electronics and cameras)."""
+    price = listing.get("price_jpy")
+    if not price:
+        return None
+    return int(price * 1.10 + 3000) if listing.get("marketplace") == "ebay" else price
+
+
 def price_vs_comps(listing: dict, ref: dict | None) -> list[dict]:
-    price, med = listing.get("price_jpy"), (ref or {}).get("median_jpy")
+    price, med = landed_price(listing), (ref or {}).get("median_jpy")
+    out = []
+    if listing.get("marketplace") == "ebay" and price:
+        out.append(flag("import", "info", "plus international shipping and import tax (~10% + ¥3,000)",
+                        "海外送料・輸入税が別途"))
     if price and not med:
-        return [flag("no_comps", "info", "no recent sold prices to compare", "比較できる取引相場なし")]
+        return out + [flag("no_comps", "info", "no recent sold prices to compare", "比較できる取引相場なし")]
     if not price or not med:
-        return []
+        return out
     ratio = price / med
     pct = round((1 - ratio) * 100)
+    if ratio < 0.15:
+        return out + [flag("price", "scam", "price is far too low for the real item (accessory, deposit or bait listing)",
+                           "本体の価格としてはありえない安さ")]
     if ratio < 0.4:
-        return [flag("price", "scam", f"price is {pct}% under the average", f"相場より{pct}%も安すぎる")]
+        return out + [flag("price", "scam", f"price is {pct}% under the average", f"相場より{pct}%も安すぎる")]
     if ratio < 0.7:
-        return [flag("price", "deal", f"price is {pct}% under the average", f"相場より{pct}%安い")]
-    return []
+        return out + [flag("price", "deal", f"price is {pct}% under the average", f"相場より{pct}%安い")]
+    return out
 
 
 # ---------- seller ----------
@@ -131,21 +147,22 @@ def listing_quality(listing: dict) -> list[dict]:
         out.append(flag("vague", "sketchy", "vague description", "説明が少ない"))
     if _STOCK.search(_text(listing)):
         out.append(flag("stock_photos", "sketchy", "uses stock photos, not the actual item", "写真がイメージ画像"))
-    if not product_photos(listing):
-        out.append(flag("no_photos", "info", "no photos found", "写真が見当たらない"))
     return out
 
 
 # ---------- hidden condition ----------
 
 _JUNK = re.compile(r"ジャンク|部品取り|故障|動作不良|動作未確認|通電のみ|for\s*parts|not\s*working|untested|broken", re.I)
+_NEGATED = re.compile(r"\s*(?:歴|箇所|個所|品)?\s*(?:は|も)?\s*(?:なし|無し|ない|ありません|ございません|では(?:なく|ない|ありません)|じゃない|一切)", re.I)
 # common boilerplate on Yahoo Auctions / Mercari: worth a con, not a red flag
 _AS_IS = re.compile(r"現状品|現状渡し|難あり|訳あり|as[\s-]is|ノークレーム", re.I)
 
 
 def hidden_condition(listing: dict) -> list[dict]:
     text = _text(listing) + "\n" + (listing.get("condition") or "")
-    if m := _JUNK.search(text):
+    for m in _JUNK.finditer(text):
+        if _NEGATED.match(text, m.end()) or text[max(0, m.start() - 1):m.start()] == "非":
+            continue  # "故障なし", "ジャンクではありません", "動作不良はありません"
         return [flag("junk", "sketchy", f"says \"{m.group(0)}\" (sold as-is / for parts)", f"「{m.group(0)}」と記載")]
     if m := _AS_IS.search(text):
         return [flag("as_is", "info", f"sold as-is (\"{m.group(0)}\"), no returns", f"「{m.group(0)}」")]

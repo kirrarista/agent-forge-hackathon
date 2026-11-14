@@ -37,7 +37,9 @@ def _pct_under(price, ref) -> str | None:
     if not (isinstance(price, int) and isinstance(ref, int) and ref):
         return None
     pct = round((1 - price / ref) * 100)
-    return f"{pct}% under" if pct >= 0 else f"{-pct}% over"
+    if pct == 0:
+        return "at"
+    return f"{pct}% under" if pct > 0 else f"{-pct}% over"
 
 
 def _used_median(comps: list) -> int | None:
@@ -59,7 +61,12 @@ def _price_check(comps: list, retail: dict | None) -> str | None:
         lines.append(f"♻️ Used, recently sold (median): {comps_line}")
     used = _used_median(comps)
     if isinstance(new, int) and used:
-        lines.append(f"→ used sells for ~{round(used / new * 100)}% of the new price")
+        if used >= new * 0.9:
+            lines.append("→ too little sold data (above the new price); deals judged against the new price")
+        else:
+            lines.append(f"→ used sells for ~{round(used / new * 100)}% of the new price")
+    elif isinstance(new, int):
+        lines.append("→ no sold data; deals judged against the new price")
     return ("📊 Price check\n" + "\n".join(lines)) if lines else None
 
 
@@ -71,9 +78,13 @@ def _deal_block(i: int, item: dict) -> str:
         f"{medal} {_yen(listing.get('price_jpy'))}, {_label(listing.get('marketplace'))}"
         f" · deal score {verdict.get('deal_score', '?')}"
     ]
-    vs = [f"{p} sold median ({_yenk(verdict.get('sold_median_jpy'))})"
-          for p in [_pct_under(listing.get("price_jpy"), verdict.get("sold_median_jpy"))] if p]
-    vs += [f"{p} new" for p in [_pct_under(listing.get("price_jpy"), verdict.get("new_price_jpy"))] if p]
+    price = verdict.get("landed_price_jpy") or listing.get("price_jpy")
+    ref_name = "fair used price" if verdict.get("fair_price_capped") else "sold median"
+    vs = [f"{p} {ref_name} ({_yenk(verdict.get('sold_median_jpy'))})"
+          for p in [_pct_under(price, verdict.get("sold_median_jpy"))] if p]
+    vs += [f"{p} new" for p in [_pct_under(price, verdict.get("new_price_jpy"))] if p]
+    if vs and price != listing.get("price_jpy"):
+        vs[0] = f"{_yen(price)} delivered: " + vs[0]
     if vs:
         lines.append("💴 " + " · ".join(vs))
     if verdict.get("pros"):

@@ -117,3 +117,26 @@ def test_retail_in_verdict_and_sell_cap():
     assert any("below the new price" in p for p in v["pros"])
     out = run(brains.sell_advice("x", comps, retail={"price_jpy": 90000}))
     assert out["asking_price_jpy"] <= 90000 * 0.9
+
+
+def test_iphone_air_case():
+    """Live run 2026-11-14: only Jimoty sold data (¥140k, above new ¥134,480), eBay on top, ¥500 bait."""
+    retail = {"price_jpy": 134480, "source": "kakaku.com"}
+    sold = [{"marketplace": "jimoty", "title": "iPhone Air 256GB", "price_jpy": p, "url": "u"} for p in (138000, 142000)]
+    comps = brains.comps(sold)
+    seller = {"name": None, "rating": None, "review_count": None, "account_age": None}
+    desc = "iPhone Air 256GB スペースブラック。バッテリー最大容量93%。傷や凹みなし。故障なし、修理歴なし。ジャンクではありません。動作確認済みです。"
+    listings = [
+        _listing(id="ebay:1", marketplace="ebay", price_jpy=92998, seller=seller, description="iPhone Air 256GB Space Black, good condition, fully working, unlocked, ships from USA."),
+        _listing(id="mercari:1", price_jpy=120500, seller=seller, description=desc),
+        _listing(id="jimoty:1", marketplace="jimoty", price_jpy=120000, seller=seller, description=desc),
+        _listing(id="mercari:bait", price_jpy=500, seller=seller, description=desc),
+    ]
+    v = {x["listing_id"]: x for x in run(brains.evaluate(listings, comps, retail))}
+    assert v["mercari:1"]["sold_median_jpy"] <= 134480 * 0.9  # capped below the new price
+    assert not any("ジャンク" in c or "故障" in c for c in v["jimoty:1"]["cons"])  # negated
+    assert any("import tax" in c for c in v["ebay:1"]["cons"])
+    ranked = run(brains.rank(listings, list(v.values())))
+    reason = next(s["reason"] for s in ranked["skipped"] if s["listing"]["id"] == "mercari:bait")
+    assert "too low for the real item" in reason
+    assert len(set(v["mercari:1"]["cons"])) == len(v["mercari:1"]["cons"])

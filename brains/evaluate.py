@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 
 from pydantic import BaseModel, Field
 
@@ -28,8 +29,8 @@ condition details, accessories/box included, shutter count / usage, seller reput
 prices (and vs the new price in Japan, if given). Be concrete and short (max 70 chars each, English, no emoji). Do not repeat the price itself in
 every line. The price comparison (vs sold median and new price) is already shown on its own
 line, so spend pros on the item and seller, not on price. A low price is never a con (too-cheap scam pricing is already
-in the rule flags). Do not invent facts that are not in the text; if photos or details are unknown, leave it out. The rule flags are correct: include the
-serious ones as cons. deal_score: 50 means priced at the sold median, 100 means well under the median
+in the rule flags). Do not invent facts that are not in the text; if photos or details are unknown, leave it out. The rule flags are correct and are
+already shown to the user: do NOT restate them; add only cons the rules did not catch. deal_score: 50 means priced at the sold median, 100 means well under the median
 from a trusted seller in good condition; stay within 10 points of the rule_score you are given."""
 
 
@@ -37,10 +38,36 @@ def _yen(n) -> str:
     return f"¥{n:,}" if isinstance(n, int) else "?"
 
 
+def sane_reference(ref: dict | None, retail: dict | None) -> dict | None:
+    """Thin or junk sold data can put the 'used' median above the new price. A used item is never worth
+    more than ~90% of new, so cap the reference there (and use 75% of new when there is no sold data)."""
+    new = (retail or {}).get("price_jpy")
+    if not new:
+        return ref
+    cap = int(new * 0.9)
+    if not ref or not ref.get("median_jpy"):
+        est = int(new * 0.75)
+        return {"marketplace": "new-price estimate", "median_jpy": est, "p25_jpy": int(est * 0.9),
+                "p75_jpy": cap, "n_sold": 0, "sample_urls": [], "estimated": True}
+    if ref["median_jpy"] <= cap:
+        return ref
+    scale = cap / ref["median_jpy"]
+    return ref | {"median_jpy": cap, "p25_jpy": int((ref.get("p25_jpy") or cap) * scale),
+                  "p75_jpy": int((ref.get("p75_jpy") or cap) * scale), "capped": True}
+
+
+_WORD = re.compile(r"[a-z]{4,}")
+
+
+def _same_point(a: str, b: str) -> bool:
+    wa, wb = set(_WORD.findall(a.lower())), set(_WORD.findall(b.lower()))
+    return bool(wa and wb) and len(wa & wb) / min(len(wa), len(wb)) >= 0.5
+
+
 def rule_score(listing: dict, ref: dict | None, flags: list[dict], risk: str) -> int:
     if risk == "scam":
         return 0
-    price, med = listing.get("price_jpy"), (ref or {}).get("median_jpy")
+    price, med = scam.landed_price(listing), (ref or {}).get("median_jpy")
     score = 50.0
     if price and med:
         score = 50 + (1 - price / med) * 100  # 25% under median → 75, 50% under → 100
@@ -69,7 +96,7 @@ def suggested_offer(listing: dict, ref: dict | None, flags: list[dict]) -> int |
 
 def template_pros_cons(listing: dict, ref: dict | None, flags: list[dict]) -> tuple[list[str], list[str]]:
     pros, cons = [], []
-    price, med = listing.get("price_jpy"), (ref or {}).get("median_jpy")
+    price, med = scam.landed_price(listing), (ref or {}).get("median_jpy")
     if price and med and price < med:
         pros.append(f"{round((1 - price / med) * 100)}% under the recent sold median ({_yen(med)})")
     elif price and med:
@@ -92,7 +119,7 @@ async def evaluate_one(listing: dict, comps_list: list[dict], all_listings: list
         FLAGS[lid], REFS[lid] = [], None
         return {"listing_id": lid, "risk": "ok", "deal_score": 0, "pros": [], "cons": ["already sold"],
                 "suggested_offer_jpy": None, "sold": True}
-    ref = reference(comps_list, listing.get("marketplace"))
+    ref = sane_reference(reference(comps_list, listing.get("marketplace")), retail)
     flags = scam.check(listing, ref, all_listings)
     risk = scam.risk(flags)
     base = rule_score(listing, ref, flags, risk)
@@ -117,7 +144,8 @@ async def evaluate_one(listing: dict, comps_list: list[dict], all_listings: list
             # rule flags always make it into cons, then the model's own
             rule_cons = [c for c in cons if any(c.startswith(f["en"]) for f in flags)]
             extra = [c.strip()[:90] for c in ai.cons if c.strip()]
-            cons = (rule_cons + [c for c in extra if c not in rule_cons])[:3]
+            extra = [c for c in extra if not any(_same_point(c, r) for r in rule_cons)]
+            cons = (rule_cons + extra)[:3]
             score = max(1, min(100, max(base - 10, min(base + 10, ai.deal_score))))
 
     FLAGS[lid], REFS[lid] = flags, ref
@@ -128,8 +156,11 @@ async def evaluate_one(listing: dict, comps_list: list[dict], all_listings: list
         "pros": pros,
         "cons": cons,
         "suggested_offer_jpy": None if risk == "scam" else suggested_offer(listing, ref, flags),
-        "sold_median_jpy": (ref or {}).get("median_jpy"),  # what this item has recently sold for, used
+        # what this item has recently sold for, used (None when only estimated from the new price)
+        "sold_median_jpy": None if (ref or {}).get("estimated") else (ref or {}).get("median_jpy"),
         "new_price_jpy": (retail or {}).get("price_jpy"),   # what it costs new in Japan
+        "landed_price_jpy": scam.landed_price(listing),     # price incl. eBay shipping + import tax
+        "fair_price_capped": bool((ref or {}).get("capped")),
     }
 
 

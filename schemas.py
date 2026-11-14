@@ -23,7 +23,7 @@ class Seller(TypedDict):
     name: str | None
     rating: float | None        # 0..5
     review_count: int | None
-    account_age: int | None     # days since account creation (team: confirm unit)
+    account_age: str | int | None  # raw string as scraped ("2023年5月", "Mar 2014"); numeric = months
 
 
 class Listing(TypedDict):

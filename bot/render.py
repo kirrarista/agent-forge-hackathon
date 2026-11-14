@@ -25,8 +25,11 @@ def _label(marketplace) -> str:
 
 
 def _comps_line(comps: list) -> str:
+    # 0-1 sold items -> median_jpy is null (brains/README); skip those marketplaces.
     return " · ".join(
-        f"{_label(c.get('marketplace'))} {_yenk(c.get('median_jpy'))}" for c in comps
+        f"{_label(c.get('marketplace'))} {_yenk(c.get('median_jpy'))}"
+        for c in comps
+        if isinstance(c.get("median_jpy"), int)
     )
 
 
@@ -72,8 +75,9 @@ def render(result: dict) -> str:
         f"Searched {stats.get('marketplaces', 0)} marketplaces · {stats.get('listings', 0)} listings"
         f" · {stats.get('sold', 0)} sold prices · {stats.get('rejected', 0)} rejected",
     ]
-    if comps:
-        blocks.append("📊 Recent sold prices (median)\n" + _comps_line(comps))
+    comps_line = _comps_line(comps)
+    if comps_line:
+        blocks.append("📊 Recent sold prices (median)\n" + comps_line)
     blocks.extend(_deal_block(i, item) for i, item in enumerate(top))
     blocks.extend(_skip_line(item) for item in skipped)
     if not top:
@@ -91,9 +95,9 @@ def render(result: dict) -> str:
 
 def render_sell(result: dict) -> str:
     lines = [f"💰 Suggested asking price: {_yen(result.get('asking_price_jpy'))}"]
-    comps = result.get("comps") or []
-    if comps:
-        lines.append("📊 Recent sold prices (median): " + _comps_line(comps))
+    comps_line = _comps_line(result.get("comps") or [])
+    if comps_line:
+        lines.append("📊 Recent sold prices (median): " + comps_line)
     if result.get("draft_listing"):
         lines.append("📝 Draft listing:\n\n" + result["draft_listing"])
     text = "\n\n".join(lines)

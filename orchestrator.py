@@ -8,9 +8,10 @@ Data modes (env, read at import — bot/app.py loads .env first):
                       rank / sell_advice
 
 AgentField is optional (USE_AGENTFIELD=1). Without it, scouts/brains are plain async
-imports fanned out with asyncio.gather — the plan's sanctioned fallback. With it, seam
-calls go through app.call() so the workflow shows as a graph in the dashboard, and an
-approve_offer reasoner demonstrates the app.pause() human-approval gate.
+imports — the plan's sanctioned fallback. With it, seam calls go through app.call()
+so the workflow shows as a graph in the dashboard, and an approve_offer reasoner
+demonstrates the app.pause() human-approval gate. Run `python -m brains.node`
+alongside `af server` so brains' model calls go through the AgentField app.
 
 SDK names verified against agentfield.ai docs + PyPI (Nov 2026):
   Agent(node_id=...), @app.reasoner(), await app.call("node.reasoner", **kwargs),
@@ -167,10 +168,12 @@ async def run_buy(query: str, budget_jpy: int | None = None) -> dict:
         return _load_demo("buy")
 
     marketplaces = list(MARKETPLACES)
-    listings, sold = await asyncio.gather(
-        _call(SCOUT_NODE, "search", query=query, budget_jpy=budget_jpy, marketplaces=marketplaces),
-        _call(SCOUT_NODE, "sold_prices", query=query, marketplaces=marketplaces),
+    # scouts/README: call search BEFORE sold_prices — sold-out items spotted while
+    # searching are reused as sold prices, so these must not run in parallel.
+    listings = await _call(
+        SCOUT_NODE, "search", query=query, budget_jpy=budget_jpy, marketplaces=marketplaces
     )
+    sold = await _call(SCOUT_NODE, "sold_prices", query=query, marketplaces=marketplaces)
     comps = await _call(BRAIN_NODE, "comps", sold=sold)
     verdicts = await _call(BRAIN_NODE, "evaluate", listings=listings, comps=comps)
     ranked = await _call(BRAIN_NODE, "rank", listings=listings, verdicts=verdicts)

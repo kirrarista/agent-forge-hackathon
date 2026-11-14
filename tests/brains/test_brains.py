@@ -72,3 +72,4 @@ def test_account_age():
     assert scam.account_age_months("Mar 2014") > 100
     assert scam.account_age_months("2023年5月") > 12
     assert scam.account_age_months(None) is None
+    assert scam.account_age_months(3) < 1  # ints are days (schemas.py)

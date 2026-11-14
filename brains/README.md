@@ -35,7 +35,8 @@ regexes), `seller.review_count`, `seller.rating` (0-5), `seller.account_age` (ra
 | price 40-70% of median | counts as sketchy only if something else is sketchy |
 | seller: < 3 months old, < 5 reviews, rating < 4.0 | sketchy |
 | LINE / WhatsApp / bank transfer / 直接取引 / email in text | scam |
-| description < 60 chars | sketchy |
+| description too short (< 50 chars, Japanese chars count 2.5×) | sketchy |
+| 写真はイメージです / stock photos | sketchy |
 | ジャンク / 部品取り / 動作未確認 / for parts | sketchy + con |
 | same image URL in another seller's listing | sketchy |
 

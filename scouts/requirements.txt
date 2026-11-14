@@ -1,0 +1,4 @@
+tavily-python>=0.8
+daytona>=0.231
+python-dotenv>=1.0
+pytest>=8

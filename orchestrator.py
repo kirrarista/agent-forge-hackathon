@@ -242,9 +242,17 @@ async def run_sell(item: str) -> dict:
             result = _load_demo("sell")
         else:
             retail_task = asyncio.create_task(_retail(item))
+            # Current listings too: when nothing has sold recently, price against what's for sale now.
+            # search runs first so sold-out items it spots are reused by sold_prices (scouts/README).
+            try:
+                listings = await _call(SCOUT_NODE, "search", query=item, budget_jpy=None,
+                                       marketplaces=list(MARKETPLACES))
+            except Exception:
+                listings = []
             sold = await _call(SCOUT_NODE, "sold_prices", query=item, marketplaces=list(MARKETPLACES))
             comps = await _call(BRAIN_NODE, "comps", sold=sold)
-            advice = await _call(BRAIN_NODE, "sell_advice", item=item, comps=comps, retail=await retail_task)
+            advice = await _call(BRAIN_NODE, "sell_advice", item=item, comps=comps,
+                                 retail=await retail_task, listings=listings)
             result = {**advice, "comps": comps}
         obs.emit("run_finished", op="sell", mode=mode, query=item,
                  asking_price_jpy=result.get("asking_price_jpy"),

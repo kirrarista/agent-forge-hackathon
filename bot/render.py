@@ -50,7 +50,7 @@ def _used_median(comps: list) -> int | None:
     return round(sum(c["median_jpy"] * (c.get("n_sold") or 1) for c in jp) / n) if jp else None
 
 
-def _price_check(comps: list, retail: dict | None) -> str | None:
+def _price_check(comps: list, retail: dict | None, selling: bool = False) -> str | None:
     lines = []
     new = (retail or {}).get("price_jpy")
     if isinstance(new, int):
@@ -60,7 +60,10 @@ def _price_check(comps: list, retail: dict | None) -> str | None:
     if comps_line:
         lines.append(f"♻️ Used, recently sold (median): {comps_line}")
     used = _used_median(comps)
-    if isinstance(new, int) and used:
+    if selling:  # the sell message explains its own basis
+        if isinstance(new, int) and used and used < new * 0.9:
+            lines.append(f"→ used sells for ~{round(used / new * 100)}% of the new price")
+    elif isinstance(new, int) and used:
         if used >= new * 0.9:
             lines.append("→ too little sold data (above the new price); deals judged against the new price")
         else:
@@ -140,8 +143,15 @@ def render(result: dict) -> str:
 
 
 def render_sell(result: dict) -> str:
-    lines = [f"💰 Suggested asking price: {_yen(result.get('asking_price_jpy'))}"]
-    price_check = _price_check(result.get("comps") or [], result.get("retail"))
+    asking = result.get("asking_price_jpy")
+    head = f"💰 Suggested asking price: {_yen(asking)}" if isinstance(asking, int) else \
+        "💰 Couldn't find enough prices to suggest one"
+    if isinstance(result.get("quick_sale_jpy"), int) and isinstance(result.get("patient_jpy"), int):
+        head += f"\n⚡ Quick sale {_yen(result['quick_sale_jpy'])} · 🐢 Patient {_yen(result['patient_jpy'])}"
+    if result.get("basis"):
+        head += f"\n📐 Based on {result['basis']}"
+    lines = [head]
+    price_check = _price_check(result.get("comps") or [], result.get("retail"), selling=True)
     if price_check:
         lines.append(price_check)
     if result.get("draft_listing"):

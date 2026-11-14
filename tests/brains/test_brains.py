@@ -140,3 +140,16 @@ def test_iphone_air_case():
     reason = next(s["reason"] for s in ranked["skipped"] if s["listing"]["id"] == "mercari:bait")
     assert "too low for the real item" in reason
     assert len(set(v["mercari:1"]["cons"])) == len(v["mercari:1"]["cons"])
+
+
+def test_sell_fallback_chain():
+    asks = [_listing(id=f"mercari:a{i}", price_jpy=p) for i, p in enumerate((180000, 195000, 200000, 210000, 3000))]
+    # no sold data -> current listings (accessory at ¥3,000 trimmed), undercut the median ask
+    out = run(brains.sell_advice("laptop", [], retail={"price_jpy": 300000}, listings=asks))
+    assert "current listings" in out["basis"] and 170000 <= out["asking_price_jpy"] <= 195000
+    # nothing at all but the new price -> rough estimate
+    out = run(brains.sell_advice("laptop", [], retail={"price_jpy": 300000}, listings=[]))
+    assert "new price" in out["basis"] and out["asking_price_jpy"] == 195000
+    # nothing at all -> None with an honest basis
+    out = run(brains.sell_advice("laptop", [], None, []))
+    assert out["asking_price_jpy"] is None and "no price data" in out["basis"]

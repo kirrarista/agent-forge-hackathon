@@ -40,8 +40,9 @@ async def rank(listings: list[dict], verdicts: list[dict]) -> dict:
 
 
 @app.reasoner(tags=["brains", "sell"])
-async def sell_advice(item: str, comps: list[dict], retail: dict | None = None) -> dict:
-    return await brains.sell_advice(item, comps, retail)
+async def sell_advice(item: str, comps: list[dict], retail: dict | None = None,
+                      listings: list[dict] | None = None) -> dict:
+    return await brains.sell_advice(item, comps, retail, listings)
 
 
 @app.reasoner(tags=["brains", "retail-price"])

@@ -1,5 +1,5 @@
 """New / retail price for an item: one Tavily search on Japanese price-comparison and retailer sites,
-then the model (or a regex fallback) pulls out the current new price. Costs 1 Tavily credit per query,
+then the model (or a regex fallback) pulls out the current new price. Costs 1-2 Tavily credits per query,
 cached per process. Never raises; returns None when nothing reliable is found.
 
     await retail_price("Sony A7III") -> {"price_jpy": 198000, "kind": "lowest new price",
@@ -48,6 +48,28 @@ def _regex_price(results: list[dict]) -> dict | None:
     return None
 
 
+async def _search(client, **kw) -> tuple[list[dict], str]:
+    res = await client.search(**kw)
+    results = [{"title": r.get("title", ""), "url": r.get("url", ""), "content": (r.get("content") or "")[:600]}
+               for r in res.get("results", [])]
+    # kakaku.com pages are Shift-JIS and often come back as mojibake: drop snippets with no readable Japanese/ASCII
+    results = [r for r in results if sum(ch.isascii() or "\u3040" <= ch <= "\u9fff" for ch in r["content"])
+               > 0.6 * max(1, len(r["content"]))]
+    return results, res.get("answer") or ""
+
+
+async def _extract_price(query: str, results: list[dict], answer: str) -> dict | None:
+    if not results and not answer:
+        return None
+    payload = {"product": query, "results": results, "search_engine_summary": answer}
+    ai = await llm.structured(SYSTEM, json.dumps(payload, ensure_ascii=False), RetailAI)
+    if ai and ai.price_jpy and 500 <= ai.price_jpy <= 5_000_000:
+        return {"price_jpy": ai.price_jpy, "kind": ai.kind, "url": ai.url}
+    if not llm.enabled():
+        return _regex_price(results)
+    return None
+
+
 async def retail_price(query: str) -> dict | None:
     key = query.strip().lower()
     if key in _cache:
@@ -58,18 +80,15 @@ async def retail_price(query: str) -> dict | None:
             return None
         from tavily import AsyncTavilyClient
 
-        res = await AsyncTavilyClient(api_key=os.environ["TAVILY_API_KEY"]).search(
-            query=f"{query} 新品 価格 最安値", include_domains=DOMAINS, max_results=6, search_depth="basic")
-        results = [{"title": r.get("title", ""), "url": r.get("url", ""), "content": (r.get("content") or "")[:600]}
-                   for r in res.get("results", [])]
-        if not results:
-            return None
-        ai = await llm.structured(SYSTEM, json.dumps({"product": query, "results": results}, ensure_ascii=False),
-                                  RetailAI)
-        if ai and ai.price_jpy and 500 <= ai.price_jpy <= 5_000_000:
-            out = {"price_jpy": ai.price_jpy, "kind": ai.kind, "url": ai.url}
-        elif not llm.enabled():
-            out = _regex_price(results)
+        client = AsyncTavilyClient(api_key=os.environ["TAVILY_API_KEY"])
+        # 1) Japanese price-comparison / retailer sites (1 credit)
+        results, answer = await _search(client, query=f"{query} 新品 価格 最安値", include_domains=DOMAINS,
+                                        max_results=6, search_depth="basic")
+        out = await _extract_price(query, results, answer)
+        if not out:  # 2) open web + Tavily's own answer (1 more credit)
+            results, answer = await _search(client, query=f"{query} 新品 価格 円 (new price in Japan, yen)",
+                                            max_results=6, search_depth="basic", include_answer="basic")
+            out = await _extract_price(query, results, answer)
         if out:
             out["source"] = urlparse(out.get("url") or "").netloc.removeprefix("www.") or None
     except Exception as e:

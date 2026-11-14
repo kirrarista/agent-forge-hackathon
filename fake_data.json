@@ -1,0 +1,271 @@
+{
+  "listings": [
+    {
+      "id": "mercari:m77821034",
+      "marketplace": "mercari",
+      "url": "https://jp.mercari.com/item/m77821034",
+      "title": "Sony A7III ボディ 低シャッター 箱付き",
+      "price_jpy": 78000,
+      "condition": "目立った傷なし",
+      "seller": {"name": "カメラの山田", "rating": 4.9, "review_count": 312, "account_age": 1460},
+      "description": "シャッター回数約2,400回。元箱・バッテリー・充電器付き。画面に小さな傷があります。動作確認済み。",
+      "image_urls": [
+        "https://static.mercdn.net/item/detail/orig/photos/m77821034_1.jpg",
+        "https://static.mercdn.net/item/detail/orig/photos/m77821034_2.jpg"
+      ]
+    },
+    {
+      "id": "yahoo_auctions:x99218374",
+      "marketplace": "yahoo_auctions",
+      "url": "https://page.auctions.yahoo.co.jp/jp/auction/x99218374",
+      "title": "SONY α7 III ボディ 美品 防湿庫保管",
+      "price_jpy": 81500,
+      "condition": "やや傷あり",
+      "seller": {"name": "tokyo_camera_shop", "rating": 4.8, "review_count": 1540, "account_age": 2900},
+      "description": "シャッター約9,000回。底部にスレあり。防湿庫保管。バッテリー2個付き。",
+      "image_urls": [
+        "https://auctions.c.yimg.jp/images.auctions.yahoo.co.jp/image/dr000/x99218374_1.jpg"
+      ]
+    },
+    {
+      "id": "ebay:285511209847",
+      "marketplace": "ebay",
+      "url": "https://www.ebay.com/itm/285511209847",
+      "title": "Sony Alpha a7 III Mirrorless Camera Body - Excellent",
+      "price_jpy": 84900,
+      "condition": "Used - Excellent",
+      "seller": {"name": "japan_camera_hub", "rating": 4.7, "review_count": 87, "account_age": 730},
+      "description": "Shutter count ~5,100. Includes battery and charger. Minor brassing on base. Ships from Tokyo, import duties may apply.",
+      "image_urls": [
+        "https://i.ebayimg.com/images/g/abc/s-l1600.jpg"
+      ]
+    },
+    {
+      "id": "jimoty:j5533201",
+      "marketplace": "jimoty",
+      "url": "https://jmty.jp/tokyo/sale-ele/j5533201",
+      "title": "Sony A7III 激安 早い者勝ち",
+      "price_jpy": 39800,
+      "condition": null,
+      "seller": {"name": "hiro_2026", "rating": null, "review_count": 0, "account_age": 3},
+      "description": "ほぼ新品です。詳しくはLINEで連絡ください。ID: hiro_deal_888。写真はいずれもイメージです。",
+      "image_urls": [
+        "https://jmty.jp/images/stock/a7iii_sample.jpg"
+      ]
+    },
+    {
+      "id": "mercari:m88120045",
+      "marketplace": "mercari",
+      "url": "https://jp.mercari.com/item/m88120045",
+      "title": "Sony A7III ボディ 完品 低シャッター",
+      "price_jpy": 95000,
+      "condition": "未使用に近い",
+      "seller": {"name": "camera_pro_osaka", "rating": 4.95, "review_count": 502, "account_age": 2100},
+      "description": "シャッター約800回。完品。元箱・保証書付き。",
+      "image_urls": [
+        "https://static.mercdn.net/item/detail/orig/photos/m88120045_1.jpg"
+      ]
+    }
+  ],
+  "sold": [
+    {"marketplace": "mercari", "title": "Sony A7III ボディ", "price_jpy": 92000, "url": "https://jp.mercari.com/item/m90000001"},
+    {"marketplace": "mercari", "title": "Sony A7III body", "price_jpy": 95000, "url": "https://jp.mercari.com/item/m90000002"},
+    {"marketplace": "mercari", "title": "SONY α7III ボディ 美品", "price_jpy": 96500, "url": "https://jp.mercari.com/item/m90000003"},
+    {"marketplace": "mercari", "title": "Sony A7III ボディ 箱付き", "price_jpy": 98000, "url": "https://jp.mercari.com/item/m90000004"},
+    {"marketplace": "mercari", "title": "Sony α7 III body", "price_jpy": 98000, "url": "https://jp.mercari.com/item/m90000005"},
+    {"marketplace": "mercari", "title": "Sony A7III ボディ", "price_jpy": 99500, "url": "https://jp.mercari.com/item/m90000006"},
+    {"marketplace": "mercari", "title": "SONY A7III 本体", "price_jpy": 101000, "url": "https://jp.mercari.com/item/m90000007"},
+    {"marketplace": "mercari", "title": "Sony A7III body excellent", "price_jpy": 104000, "url": "https://jp.mercari.com/item/m90000008"},
+    {"marketplace": "mercari", "title": "Sony α7III フルセット", "price_jpy": 108000, "url": "https://jp.mercari.com/item/m90000009"},
+    {"marketplace": "yahoo_auctions", "title": "SONY α7 III ボディ", "price_jpy": 85000, "url": "https://page.auctions.yahoo.co.jp/jp/auction/x1000001"},
+    {"marketplace": "yahoo_auctions", "title": "Sony A7III 本体", "price_jpy": 89000, "url": "https://page.auctions.yahoo.co.jp/jp/auction/x1000002"},
+    {"marketplace": "yahoo_auctions", "title": "α7 III ボディ 美品", "price_jpy": 92000, "url": "https://page.auctions.yahoo.co.jp/jp/auction/x1000003"},
+    {"marketplace": "yahoo_auctions", "title": "SONY A7III body", "price_jpy": 94000, "url": "https://page.auctions.yahoo.co.jp/jp/auction/x1000004"},
+    {"marketplace": "yahoo_auctions", "title": "Sony α7III ボディ", "price_jpy": 96000, "url": "https://page.auctions.yahoo.co.jp/jp/auction/x1000005"},
+    {"marketplace": "yahoo_auctions", "title": "α7 III 本体 箱付き", "price_jpy": 99000, "url": "https://page.auctions.yahoo.co.jp/jp/auction/x1000006"},
+    {"marketplace": "yahoo_auctions", "title": "SONY α7 III 美品", "price_jpy": 103000, "url": "https://page.auctions.yahoo.co.jp/jp/auction/x1000007"},
+    {"marketplace": "ebay", "title": "Sony Alpha a7 III Body", "price_jpy": 104000, "url": "https://www.ebay.com/itm/285500000001"},
+    {"marketplace": "ebay", "title": "Sony a7 III Mirrorless Body", "price_jpy": 109000, "url": "https://www.ebay.com/itm/285500000002"},
+    {"marketplace": "ebay", "title": "Sony Alpha 7 III Camera Body", "price_jpy": 115000, "url": "https://www.ebay.com/itm/285500000003"},
+    {"marketplace": "ebay", "title": "Sony a7 III Body Excellent++", "price_jpy": 121000, "url": "https://www.ebay.com/itm/285500000004"}
+  ],
+  "comps": [
+    {
+      "marketplace": "mercari",
+      "median_jpy": 98000,
+      "p25_jpy": 95000,
+      "p75_jpy": 102000,
+      "n_sold": 9,
+      "sample_urls": [
+        "https://jp.mercari.com/item/m90000004",
+        "https://jp.mercari.com/item/m90000005"
+      ]
+    },
+    {
+      "marketplace": "yahoo_auctions",
+      "median_jpy": 94000,
+      "p25_jpy": 89000,
+      "p75_jpy": 99000,
+      "n_sold": 7,
+      "sample_urls": [
+        "https://page.auctions.yahoo.co.jp/jp/auction/x1000004"
+      ]
+    },
+    {
+      "marketplace": "ebay",
+      "median_jpy": 112000,
+      "p25_jpy": 106000,
+      "p75_jpy": 118000,
+      "n_sold": 4,
+      "sample_urls": [
+        "https://www.ebay.com/itm/285500000002",
+        "https://www.ebay.com/itm/285500000003"
+      ]
+    }
+  ],
+  "verdicts": [
+    {
+      "listing_id": "mercari:m77821034",
+      "risk": "ok",
+      "deal_score": 86,
+      "pros": ["2,400 shutter clicks", "box included", "seller has 312 reviews (4.9★)"],
+      "cons": ["Small scratch on the screen"],
+      "suggested_offer_jpy": 72000
+    },
+    {
+      "listing_id": "yahoo_auctions:x99218374",
+      "risk": "ok",
+      "deal_score": 78,
+      "pros": ["~9,000 shutter clicks", "kept in dry cabinet", "seller has 1,540 reviews (4.8★)"],
+      "cons": ["Brassing on the base"],
+      "suggested_offer_jpy": 75000
+    },
+    {
+      "listing_id": "ebay:285511209847",
+      "risk": "ok",
+      "deal_score": 71,
+      "pros": ["~5,100 shutter clicks", "battery + charger included"],
+      "cons": ["Minor brassing", "import duties may apply"],
+      "suggested_offer_jpy": 79000
+    },
+    {
+      "listing_id": "jimoty:j5533201",
+      "risk": "scam",
+      "deal_score": 5,
+      "pros": [],
+      "cons": ["Price 60% under the average", "New account (3 days)", "Asks to talk on LINE", "Stock photos only"],
+      "suggested_offer_jpy": null
+    },
+    {
+      "listing_id": "mercari:m88120045",
+      "risk": "ok",
+      "deal_score": 40,
+      "pros": ["Very low shutter count (~800)"],
+      "cons": ["Over the ¥90k budget"],
+      "suggested_offer_jpy": null
+    }
+  ],
+  "ranked": {
+    "top": [
+      {
+        "listing": {
+          "id": "mercari:m77821034",
+          "marketplace": "mercari",
+          "url": "https://jp.mercari.com/item/m77821034",
+          "title": "Sony A7III ボディ 低シャッター 箱付き",
+          "price_jpy": 78000,
+          "condition": "目立った傷なし",
+          "seller": {"name": "カメラの山田", "rating": 4.9, "review_count": 312, "account_age": 1460},
+          "description": "シャッター回数約2,400回。元箱・バッテリー・充電器付き。画面に小さな傷があります。動作確認済み。",
+          "image_urls": [
+            "https://static.mercdn.net/item/detail/orig/photos/m77821034_1.jpg",
+            "https://static.mercdn.net/item/detail/orig/photos/m77821034_2.jpg"
+          ]
+        },
+        "verdict": {
+          "listing_id": "mercari:m77821034",
+          "risk": "ok",
+          "deal_score": 86,
+          "pros": ["2,400 shutter clicks", "box included", "seller has 312 reviews (4.9★)"],
+          "cons": ["Small scratch on the screen"],
+          "suggested_offer_jpy": 72000
+        },
+        "draft_message": "はじめまして。Sony A7IIIの購入を検討しております。画面の傷を拝見したうえで、¥72,000でお譲りいただけないでしょうか。送料込み・即日決済可能です。ご検討のほどよろしくお願いいたします。"
+      },
+      {
+        "listing": {
+          "id": "yahoo_auctions:x99218374",
+          "marketplace": "yahoo_auctions",
+          "url": "https://page.auctions.yahoo.co.jp/jp/auction/x99218374",
+          "title": "SONY α7 III ボディ 美品 防湿庫保管",
+          "price_jpy": 81500,
+          "condition": "やや傷あり",
+          "seller": {"name": "tokyo_camera_shop", "rating": 4.8, "review_count": 1540, "account_age": 2900},
+          "description": "シャッター約9,000回。底部にスレあり。防湿庫保管。バッテリー2個付き。",
+          "image_urls": [
+            "https://auctions.c.yimg.jp/images.auctions.yahoo.co.jp/image/dr000/x99218374_1.jpg"
+          ]
+        },
+        "verdict": {
+          "listing_id": "yahoo_auctions:x99218374",
+          "risk": "ok",
+          "deal_score": 78,
+          "pros": ["~9,000 shutter clicks", "kept in dry cabinet", "seller has 1,540 reviews (4.8★)"],
+          "cons": ["Brassing on the base"],
+          "suggested_offer_jpy": 75000
+        },
+        "draft_message": "出品者様、こんにちは。α7 IIIに興味があります。底部のスレを考慮し、¥75,000での即決をお願いできないでしょうか。入金後すぐに受取評価いたします。よろしくお願いいたします。"
+      },
+      {
+        "listing": {
+          "id": "ebay:285511209847",
+          "marketplace": "ebay",
+          "url": "https://www.ebay.com/itm/285511209847",
+          "title": "Sony Alpha a7 III Mirrorless Camera Body - Excellent",
+          "price_jpy": 84900,
+          "condition": "Used - Excellent",
+          "seller": {"name": "japan_camera_hub", "rating": 4.7, "review_count": 87, "account_age": 730},
+          "description": "Shutter count ~5,100. Includes battery and charger. Minor brassing on base. Ships from Tokyo, import duties may apply.",
+          "image_urls": [
+            "https://i.ebayimg.com/images/g/abc/s-l1600.jpg"
+          ]
+        },
+        "verdict": {
+          "listing_id": "ebay:285511209847",
+          "risk": "ok",
+          "deal_score": 71,
+          "pros": ["~5,100 shutter clicks", "battery + charger included"],
+          "cons": ["Minor brassing", "import duties may apply"],
+          "suggested_offer_jpy": 79000
+        },
+        "draft_message": "Hi! I'm interested in the a7 III. Considering the brassing on the base, would you accept ¥79,000 via Best Offer? I can pay immediately. Thanks!"
+      }
+    ],
+    "skipped": [
+      {
+        "listing": {
+          "id": "jimoty:j5533201",
+          "marketplace": "jimoty",
+          "url": "https://jmty.jp/tokyo/sale-ele/j5533201",
+          "title": "Sony A7III 激安 早い者勝ち",
+          "price_jpy": 39800,
+          "condition": null,
+          "seller": {"name": "hiro_2026", "rating": null, "review_count": 0, "account_age": 3},
+          "description": "ほぼ新品です。詳しくはLINEで連絡ください。ID: hiro_deal_888。写真はいずれもイメージです。",
+          "image_urls": [
+            "https://jmty.jp/images/stock/a7iii_sample.jpg"
+          ]
+        },
+        "verdict": {
+          "listing_id": "jimoty:j5533201",
+          "risk": "scam",
+          "deal_score": 5,
+          "pros": [],
+          "cons": ["Price 60% under the average", "New account (3 days)", "Asks to talk on LINE", "Stock photos only"],
+          "suggested_offer_jpy": null
+        },
+        "reason": "Price is 60% under the average, new account (3 days), asks to talk on LINE."
+      }
+    ]
+  }
+}

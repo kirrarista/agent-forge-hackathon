@@ -1,0 +1,5 @@
+python-telegram-bot>=21.0
+python-dotenv>=1.0
+
+# Optional — AgentField orchestration (set USE_AGENTFIELD=1, run `af server` first)
+# agentfield

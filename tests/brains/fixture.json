@@ -1,0 +1,282 @@
+{
+ "listings": [
+  {
+   "id": "mercari:m1",
+   "marketplace": "mercari",
+   "url": "https://example.com/mercari/m1",
+   "title": "Sony α7III ボディ 美品 箱付き",
+   "price_jpy": 78000,
+   "condition": "目立った傷や汚れなし",
+   "seller": {
+    "name": "camera_taro",
+    "rating": 4.9,
+    "review_count": 312,
+    "account_age": null
+   },
+   "description": "SONY α7III ボディです。シャッター回数約2,400回。元箱、バッテリー2個、充電器、ストラップ付属。液晶に小さな擦り傷がありますが撮影に影響ありません。動作確認済みです。",
+   "image_urls": [
+    "https://img.example.com/m1.jpg"
+   ]
+  },
+  {
+   "id": "yahoo_auctions:y1",
+   "marketplace": "yahoo_auctions",
+   "url": "https://example.com/yahoo_auctions/y1",
+   "title": "SONY a7III ILCE-7M3 ボディ",
+   "price_jpy": 88000,
+   "condition": "目立った傷や汚れなし",
+   "seller": {
+    "name": "yahoo_seller",
+    "rating": 4.95,
+    "review_count": 1200,
+    "account_age": "2015年3月"
+   },
+   "description": "SONY α7III ボディです。シャッター回数約8,000回。元箱、バッテリー2個、充電器、ストラップ付属。液晶に小さな擦り傷がありますが撮影に影響ありません。動作確認済みです。",
+   "image_urls": [
+    "https://img.example.com/y1.jpg"
+   ]
+  },
+  {
+   "id": "mercari:m2",
+   "marketplace": "mercari",
+   "url": "https://example.com/mercari/m2",
+   "title": "α7III ボディ 中古",
+   "price_jpy": 92000,
+   "condition": "やや傷や汚れあり",
+   "seller": {
+    "name": "hanako",
+    "rating": 4.7,
+    "review_count": 45,
+    "account_age": null
+   },
+   "description": "SONY α7III ボディです。シャッター回数約2,400回。元箱、バッテリー2個、充電器、ストラップ付属。液晶に小さな擦り傷がありますが撮影に影響ありません。動作確認済みです。",
+   "image_urls": [
+    "https://img.example.com/m2.jpg"
+   ]
+  },
+  {
+   "id": "ebay:e1",
+   "marketplace": "ebay",
+   "url": "https://example.com/ebay/e1",
+   "title": "Sony A7 III body",
+   "price_jpy": 85000,
+   "condition": "目立った傷や汚れなし",
+   "seller": {
+    "name": "jp_camera_shop",
+    "rating": 4.95,
+    "review_count": 5400,
+    "account_age": "Mar 2014"
+   },
+   "description": "Sony A7 III mirrorless body, shutter count 12k, works perfectly, battery and charger included, ships from Japan.",
+   "image_urls": [
+    "https://img.example.com/e1.jpg"
+   ]
+  },
+  {
+   "id": "mercari:m3",
+   "marketplace": "mercari",
+   "url": "https://example.com/mercari/m3",
+   "title": "Sony α7III",
+   "price_jpy": 81000,
+   "condition": "目立った傷や汚れなし",
+   "seller": {
+    "name": null,
+    "rating": null,
+    "review_count": null,
+    "account_age": null
+   },
+   "description": "SONY α7III ボディです。シャッター回数約2,400回。元箱、バッテリー2個、充電器、ストラップ付属。液晶に小さな擦り傷がありますが撮影に影響ありません。動作確認済みです。",
+   "image_urls": [
+    "https://img.example.com/m3.jpg"
+   ]
+  },
+  {
+   "id": "jimoty:j1",
+   "marketplace": "jimoty",
+   "url": "https://example.com/jimoty/j1",
+   "title": "ソニー α7III 格安",
+   "price_jpy": 33000,
+   "condition": "目立った傷や汚れなし",
+   "seller": {
+    "name": "newbie99",
+    "rating": null,
+    "review_count": 1,
+    "account_age": "1ヶ月"
+   },
+   "description": "α7III 売ります。急ぎです。",
+   "image_urls": [
+    "https://img.example.com/j1.jpg"
+   ]
+  },
+  {
+   "id": "jimoty:j2",
+   "marketplace": "jimoty",
+   "url": "https://example.com/jimoty/j2",
+   "title": "Sony α7III 本体",
+   "price_jpy": 70000,
+   "condition": "目立った傷や汚れなし",
+   "seller": {
+    "name": "x_seller",
+    "rating": 4.8,
+    "review_count": 12,
+    "account_age": "2022年1月"
+   },
+   "description": "α7III ボディです。動作良好、付属品あります。連絡はLINEでお願いします。LINE ID: cam_deal_jp まで。",
+   "image_urls": [
+    "https://img.example.com/j2.jpg"
+   ]
+  },
+  {
+   "id": "mercari:m4",
+   "marketplace": "mercari",
+   "url": "https://example.com/mercari/m4",
+   "title": "【ジャンク】α7III ボディ",
+   "price_jpy": 52000,
+   "condition": "全体的に状態が悪い",
+   "seller": {
+    "name": "junk_shop",
+    "rating": 4.6,
+    "review_count": 80,
+    "account_age": null
+   },
+   "description": "電源は入りますが動作未確認のためジャンク扱いでお願いします。ノークレームノーリターンでお願いします。",
+   "image_urls": [
+    "https://img.example.com/m4.jpg"
+   ]
+  }
+ ],
+ "sold": [
+  {
+   "marketplace": "mercari",
+   "title": "Sony α7III body",
+   "price_jpy": 83000,
+   "url": "https://example.com/sold/mercari/0"
+  },
+  {
+   "marketplace": "mercari",
+   "title": "Sony α7III body",
+   "price_jpy": 86000,
+   "url": "https://example.com/sold/mercari/1"
+  },
+  {
+   "marketplace": "mercari",
+   "title": "Sony α7III body",
+   "price_jpy": 89000,
+   "url": "https://example.com/sold/mercari/2"
+  },
+  {
+   "marketplace": "mercari",
+   "title": "Sony α7III body",
+   "price_jpy": 92000,
+   "url": "https://example.com/sold/mercari/3"
+  },
+  {
+   "marketplace": "mercari",
+   "title": "Sony α7III body",
+   "price_jpy": 95000,
+   "url": "https://example.com/sold/mercari/4"
+  },
+  {
+   "marketplace": "mercari",
+   "title": "Sony α7III body",
+   "price_jpy": 98000,
+   "url": "https://example.com/sold/mercari/5"
+  },
+  {
+   "marketplace": "mercari",
+   "title": "Sony α7III body",
+   "price_jpy": 101000,
+   "url": "https://example.com/sold/mercari/6"
+  },
+  {
+   "marketplace": "mercari",
+   "title": "Sony α7III body",
+   "price_jpy": 104000,
+   "url": "https://example.com/sold/mercari/7"
+  },
+  {
+   "marketplace": "yahoo_auctions",
+   "title": "Sony α7III body",
+   "price_jpy": 83000,
+   "url": "https://example.com/sold/yahoo_auctions/0"
+  },
+  {
+   "marketplace": "yahoo_auctions",
+   "title": "Sony α7III body",
+   "price_jpy": 86000,
+   "url": "https://example.com/sold/yahoo_auctions/1"
+  },
+  {
+   "marketplace": "yahoo_auctions",
+   "title": "Sony α7III body",
+   "price_jpy": 89000,
+   "url": "https://example.com/sold/yahoo_auctions/2"
+  },
+  {
+   "marketplace": "yahoo_auctions",
+   "title": "Sony α7III body",
+   "price_jpy": 92000,
+   "url": "https://example.com/sold/yahoo_auctions/3"
+  },
+  {
+   "marketplace": "yahoo_auctions",
+   "title": "Sony α7III body",
+   "price_jpy": 95000,
+   "url": "https://example.com/sold/yahoo_auctions/4"
+  },
+  {
+   "marketplace": "yahoo_auctions",
+   "title": "Sony α7III body",
+   "price_jpy": 98000,
+   "url": "https://example.com/sold/yahoo_auctions/5"
+  },
+  {
+   "marketplace": "ebay",
+   "title": "Sony α7III body",
+   "price_jpy": 106000,
+   "url": "https://example.com/sold/ebay/0"
+  },
+  {
+   "marketplace": "ebay",
+   "title": "Sony α7III body",
+   "price_jpy": 109000,
+   "url": "https://example.com/sold/ebay/1"
+  },
+  {
+   "marketplace": "ebay",
+   "title": "Sony α7III body",
+   "price_jpy": 112000,
+   "url": "https://example.com/sold/ebay/2"
+  },
+  {
+   "marketplace": "ebay",
+   "title": "Sony α7III body",
+   "price_jpy": 115000,
+   "url": "https://example.com/sold/ebay/3"
+  },
+  {
+   "marketplace": "ebay",
+   "title": "Sony α7III body",
+   "price_jpy": 118000,
+   "url": "https://example.com/sold/ebay/4"
+  },
+  {
+   "marketplace": "mercari",
+   "title": "α7III 純正バッテリー",
+   "price_jpy": 6000,
+   "url": "u"
+  },
+  {
+   "marketplace": "mercari",
+   "title": "α7III ジャンク 部品取り",
+   "price_jpy": 30000,
+   "url": "u"
+  },
+  {
+   "marketplace": "jimoty",
+   "title": "α7III",
+   "price_jpy": 90000,
+   "url": "u"
+  }
+ ]
+}

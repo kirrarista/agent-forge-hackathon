@@ -1,0 +1,3 @@
+agentfield>=0.1.9
+anthropic
+pydantic>=2

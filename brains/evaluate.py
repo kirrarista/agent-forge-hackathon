@@ -26,7 +26,8 @@ You get one listing (page text may be Japanese and include site navigation noise
 for the same item, and red flags our rules already found. Write pros and cons a buyer would care about:
 condition details, accessories/box included, shutter count / usage, seller reputation, price vs sold
 prices. Be concrete and short (max 70 chars each, English, no emoji). Do not repeat the price itself in
-every line. Do not invent facts that are not in the text. The rule flags are correct: include the
+every line. A price under the sold median is a pro, never a con (too-cheap scam pricing is already
+in the rule flags). Do not invent facts that are not in the text; if photos or details are unknown, leave it out. The rule flags are correct: include the
 serious ones as cons. deal_score: 50 means priced at the sold median, 100 means well under the median
 from a trusted seller in good condition; stay within 10 points of the rule_score you are given."""
 

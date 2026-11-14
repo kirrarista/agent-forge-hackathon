@@ -16,8 +16,8 @@ advice   = await brains.sell_advice(item, comps)   # {"asking_price_jpy", "quick
 - `evaluate` must run before `rank` in the same process (rank reuses the rule flags for skip reasons / drafts).
 - `USE_AGENTFIELD=1`: run `python -m brains.node` (node id `brains`, port `BRAINS_PORT`=8003). Reasoners
   `comps` / `evaluate` / `rank` / `sell_advice` match `app.call("brains.<fn>")`; model = `AI_MODEL` env via LiteLLM.
-- No AgentField app attached → falls back to Anthropic API if `ANTHROPIC_API_KEY` is set → else rules-only
-  templates. `BRAINS_LLM=0` forces rules-only (fast, deterministic; use if the model is slow on stage).
+- Model: OpenRouter (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL` default `anthropic/claude-haiku-5.5`), through
+  AgentField `app.ai()` when running as the brains node, else called directly. No key → rules-only templates. `BRAINS_LLM=0` forces rules-only (fast, deterministic; use if the model is slow on stage).
 - `comps` with 0-1 sold items for a marketplace → `median_jpy`/`p25_jpy`/`p75_jpy` are `null`; skip those in the 📊 line.
 - `draft_message` is Japanese + an English gloss in parentheses on the second line.
 

@@ -4,20 +4,22 @@ brains steps show up as a separate box in the workflow graph.
     af server                       # control plane (Ivan)
     python -m brains.node           # this node, id "brains", port BRAINS_PORT (default 8003)
 
-Model: AgentField routes app.ai() through LiteLLM. Set AI_MODEL (e.g. "gpt-4o" with OPENAI_API_KEY,
-or "anthropic/claude-opus-5-5" with ANTHROPIC_API_KEY) in .env."""
+Model: AgentField routes app.ai() through LiteLLM. With OPENROUTER_API_KEY set it uses
+openrouter/$OPENROUTER_MODEL (default anthropic/claude-haiku-5.5); AI_MODEL overrides."""
 from __future__ import annotations
 
 import os
 
 from agentfield import Agent, AIConfig
 
-import brains
+import brains  # loads .env before the AIConfig below reads it
 
 app = Agent(
     node_id=os.getenv("BRAIN_NODE", "brains"),
     agentfield_server=os.getenv("AGENTFIELD_SERVER", "http://localhost:8080"),
-    ai_config=AIConfig(model=os.getenv("AI_MODEL", "gpt-4o")),
+    ai_config=AIConfig(model=os.getenv("AI_MODEL") or (
+        "openrouter/" + os.getenv("OPENROUTER_MODEL", "anthropic/claude-haiku-5.5")
+        if os.getenv("OPENROUTER_API_KEY") else "gpt-4o")),
 )
 brains.attach(app)  # every evaluate / sell_advice model call goes through app.ai()
 

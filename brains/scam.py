@@ -16,14 +16,26 @@ def flag(rule: str, level: str, en: str, ja: str = "") -> dict:
     return {"rule": rule, "level": level, "en": en, "ja": ja}
 
 
+# Lines of page chrome scouts' page text drags in: other listings' price tiles, insurance ads, nav.
+_NOISE_LINE = re.compile(r"(?:現在|即決|送料)\s*[\d,]+\s*円|[\d,]+\s*円\s*$|PayPay|ほけん|あんしん修理|違反商品|"
+                         r"フリマ|おすすめ|関連(?:商品|オークション)|閲覧履歴|この出品者の|ウォッチ|ログイン|"
+                         r"Share|LINEで送る|LINEで共有|Similar items|Sponsored|You may also like", re.I)
+
+
+def clean(text: str | None) -> str:
+    return "\n".join(line for line in (text or "").splitlines() if not _NOISE_LINE.search(line))
+
+
 def _text(listing: dict) -> str:
-    return f"{listing.get('title') or ''}\n{listing.get('description') or ''}"
+    return f"{listing.get('title') or ''}\n{clean(listing.get('description'))}"
 
 
 # ---------- price vs sold average ----------
 
 def price_vs_comps(listing: dict, ref: dict | None) -> list[dict]:
     price, med = listing.get("price_jpy"), (ref or {}).get("median_jpy")
+    if price and not med:
+        return [flag("no_comps", "info", "no recent sold prices to compare", "比較できる取引相場なし")]
     if not price or not med:
         return []
     ratio = price / med
@@ -124,16 +136,18 @@ def listing_quality(listing: dict) -> list[dict]:
 
 # ---------- hidden condition ----------
 
-_JUNK = re.compile(r"ジャンク|部品取り|故障|動作未確認|動作不良|難あり|訳あり|現状品|for\s*parts|not\s*working|"
-                   r"untested|as[\s-]is|broken", re.I)
+_JUNK = re.compile(r"ジャンク|部品取り|故障|動作不良|動作未確認|通電のみ|for\s*parts|not\s*working|untested|broken", re.I)
+# common boilerplate on Yahoo Auctions / Mercari: worth a con, not a red flag
+_AS_IS = re.compile(r"現状品|現状渡し|難あり|訳あり|as[\s-]is|ノークレーム", re.I)
 
 
 def hidden_condition(listing: dict) -> list[dict]:
     text = _text(listing) + "\n" + (listing.get("condition") or "")
-    m = _JUNK.search(text)
-    if not m:
-        return []
-    return [flag("junk", "sketchy", f"says \"{m.group(0)}\" (sold as-is / for parts)", f"「{m.group(0)}」と記載")]
+    if m := _JUNK.search(text):
+        return [flag("junk", "sketchy", f"says \"{m.group(0)}\" (sold as-is / for parts)", f"「{m.group(0)}」と記載")]
+    if m := _AS_IS.search(text):
+        return [flag("as_is", "info", f"sold as-is (\"{m.group(0)}\"), no returns", f"「{m.group(0)}」")]
+    return []
 
 
 # ---------- reused photos ----------

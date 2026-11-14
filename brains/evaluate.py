@@ -94,7 +94,7 @@ async def evaluate_one(listing: dict, comps_list: list[dict], all_listings: list
     if risk != "scam":  # don't spend model calls on listings we're skipping anyway
         payload = {
             "listing": {k: listing.get(k) for k in ("marketplace", "title", "price_jpy", "condition", "seller")}
-            | {"description": (listing.get("description") or "")[:2000]},
+            | {"description": scam.clean(listing.get("description"))[:2000]},
             "sold_prices": ref,
             "rule_flags": [f["en"] for f in flags],
             "rule_score": base,

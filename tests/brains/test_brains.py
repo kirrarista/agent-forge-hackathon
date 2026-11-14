@@ -73,3 +73,15 @@ def test_account_age():
     assert scam.account_age_months("2023年5月") > 12
     assert scam.account_age_months(None) is None
     assert scam.account_age_months(48) == 48  # numeric = months (schemas.py)
+
+
+def test_page_chrome_ignored():
+    desc = ("* 本日終了 ★美品★シャッター数 1188回 現在 81,000 円\n"
+            "* M2318【現状品】OLYMPUS OM-D E-M10 ボディ 現在 52,700 円\n"
+            "## 故障時も安心！ PayPayほけん・あんしん修理\nLINEで送る\n"
+            "★機能面 スレ傷、液晶傷。撮影＆動作確認済み。付属品は画像に掲載しているものがすべてです。")
+    l = {"id": "yahoo_auctions:z", "marketplace": "yahoo_auctions", "title": "Sony a7III ボディ", "price_jpy": 85000,
+         "condition": None, "seller": {"name": None, "rating": None, "review_count": None, "account_age": None},
+         "description": desc, "image_urls": ["a"]}
+    flags = scam.check(l, None, [l])
+    assert not [f for f in flags if f["level"] in ("scam", "sketchy")], flags

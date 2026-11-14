@@ -11,6 +11,8 @@ from __future__ import annotations
 import re
 from datetime import date
 
+from .photos import product_photos
+
 
 def flag(rule: str, level: str, en: str, ja: str = "") -> dict:
     return {"rule": rule, "level": level, "en": en, "ja": ja}
@@ -129,7 +131,7 @@ def listing_quality(listing: dict) -> list[dict]:
         out.append(flag("vague", "sketchy", "vague description", "説明が少ない"))
     if _STOCK.search(_text(listing)):
         out.append(flag("stock_photos", "sketchy", "uses stock photos, not the actual item", "写真がイメージ画像"))
-    if not listing.get("image_urls"):
+    if not product_photos(listing):
         out.append(flag("no_photos", "info", "no photos found", "写真が見当たらない"))
     return out
 
@@ -153,7 +155,7 @@ def hidden_condition(listing: dict) -> list[dict]:
 # ---------- reused photos ----------
 
 def reused_photos(listing: dict, all_listings: list[dict]) -> list[dict]:
-    mine = set(listing.get("image_urls") or [])
+    mine = set(product_photos(listing))  # ignore logos/icons every page on a site shares
     if not mine:
         return []
     my_seller = (listing.get("seller") or {}).get("name")
@@ -163,7 +165,7 @@ def reused_photos(listing: dict, all_listings: list[dict]) -> list[dict]:
         other_seller = (other.get("seller") or {}).get("name")
         if my_seller and other_seller and my_seller == other_seller:
             continue  # same seller reusing their own photos is fine
-        if mine & set(other.get("image_urls") or []):
+        if mine & set(product_photos(other)):
             return [flag("reused_photos", "sketchy", "same photos used in another listing", "他の出品と同じ写真")]
     return []
 

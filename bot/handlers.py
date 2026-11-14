@@ -6,7 +6,7 @@ import re
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 import orchestrator
-from bot import render
+from bot import photos, render
 
 UNDER_RE = re.compile(r"\s+under\s+[¥￥]?\s*(\d+(?:[.,]\d+)?)\s*(k?)\s*$", re.IGNORECASE)
 
@@ -54,9 +54,16 @@ async def buy(update, context):
             InlineKeyboardButton("❌ Skip", callback_data=f"skip:{run_id}"),
         ]]
     )
-    await msg.edit_text(
+    # Photos of the top deals first, then the summary with the buttons underneath them.
+    top = (result.get("ranked") or {}).get("top") or []
+    await photos.send_top_photos(context.bot, update.effective_chat.id, top)
+    await update.message.reply_text(
         render.render(result), reply_markup=keyboard, disable_web_page_preview=True
     )
+    try:
+        await msg.delete()
+    except Exception:
+        await msg.edit_text("🔎 Done.")
 
 
 async def sell(update, context):
@@ -97,9 +104,15 @@ async def on_button(update, context):
     elif action == "offer":
         draft = first.get("draft_message")
         if draft:
-            await query.message.reply_text(
-                "💬 Draft for #1 — copy & send on the marketplace:\n\n" + draft
+            text = "💬 Draft for #1 — copy & send on the marketplace:\n\n" + draft
+            url = (first.get("listing") or {}).get("url")
+            if url:
+                text += f"\n\n🔗 {url}"
+            sent = await photos.send_with_photo(
+                context.bot, query.message.chat_id, first.get("listing") or {}, text
             )
+            if not sent:
+                await query.message.reply_text(text, disable_web_page_preview=True)
         else:
             await query.message.reply_text("No draft available for this search.")
     elif action == "skip":

@@ -27,6 +27,8 @@ from pathlib import Path
 
 from schemas import MARKETPLACES
 
+import obs
+
 ROOT = Path(__file__).resolve().parent
 USE_FAKE_DATA = os.getenv("USE_FAKE_DATA", "1") == "1"
 DEMO_MODE = os.getenv("DEMO_MODE", "0") == "1"
@@ -59,6 +61,27 @@ def _stats(query: str, budget_jpy: int | None, listings: list, sold: list, ranke
         "sold": len(sold),
         "rejected": len(ranked.get("skipped") or []),
     }
+
+
+def _buy_counts(result: dict, mode: str) -> dict:
+    """run_finished payload for buy; merges scouts.LAST_RUN when live."""
+    ranked = result.get("ranked") or {}
+    stats = result.get("stats") or {}
+    counts = {
+        "op": "buy", "mode": mode, "query": stats.get("query"),
+        "listings": stats.get("listings", 0), "sold": stats.get("sold", 0),
+        "top": len(ranked.get("top") or []),
+        "scams_flagged": len(ranked.get("skipped") or []),
+    }
+    if mode == "live":
+        try:
+            import scouts
+            last = getattr(scouts, "LAST_RUN", {}) or {}
+            counts["rejected_scouts"] = last.get("rejected", 0)
+            counts["errors"] = last.get("errors", {})
+        except Exception:
+            pass
+    return counts
 
 
 # ---------------------------------------------------------------- AgentField (optional)
@@ -106,20 +129,22 @@ def _register_reasoners(app) -> None:
 async def _call(node: str, reasoner: str, **kwargs):
     """One seam call: app.call() when AgentField is on, direct import otherwise."""
     app = get_app()
-    if app is not None:
-        return await app.call(f"{node}.{reasoner}", **kwargs)
-    module_name = "scouts" if node == SCOUT_NODE else "brains"
-    try:
-        module = __import__(module_name)
-    except ImportError as exc:
-        raise RuntimeError(
-            f"{module_name}/ not available yet — it lands at T+45. "
-            "Keep USE_FAKE_DATA=1 until then."
-        ) from exc
-    fn = getattr(module, reasoner)
-    if asyncio.iscoroutinefunction(fn):
-        return await fn(**kwargs)
-    return fn(**kwargs)  # brains.comps is sync per the contract
+    transport = "agentfield" if app is not None else "direct"
+    async with obs.stage(reasoner, node=node, transport=transport):
+        if app is not None:
+            return await app.call(f"{node}.{reasoner}", **kwargs)
+        module_name = "scouts" if node == SCOUT_NODE else "brains"
+        try:
+            module = __import__(module_name)
+        except ImportError as exc:
+            raise RuntimeError(
+                f"{module_name}/ not available yet — it lands at T+45. "
+                "Keep USE_FAKE_DATA=1 until then."
+            ) from exc
+        fn = getattr(module, reasoner)
+        if asyncio.iscoroutinefunction(fn):
+            return await fn(**kwargs)
+        return fn(**kwargs)  # brains.comps is sync per the contract
 
 
 # ---------------------------------------------------------------- approval registry
@@ -128,7 +153,7 @@ _runs: dict[str, dict] = {}
 
 
 def new_run(result: dict) -> str:
-    run_id = uuid.uuid4().hex[:8]
+    run_id = result.pop("_run_id", None) or obs.current_run_id() or uuid.uuid4().hex[:8]
     _runs[run_id] = {"status": "paused", "result": result}
     return run_id
 
@@ -157,31 +182,36 @@ def skip(run_id: str) -> bool:
 
 async def run_buy(query: str, budget_jpy: int | None = None) -> dict:
     """-> {"comps", "ranked", "stats"}"""
-    if USE_FAKE_DATA:
-        data = _load_fake()
-        return {
-            "comps": data["comps"],
-            "ranked": data["ranked"],
-            "stats": _stats(query, budget_jpy, data["listings"], data["sold"], data["ranked"]),
-        }
-    if DEMO_MODE:
-        return _load_demo("buy")
-
-    marketplaces = list(MARKETPLACES)
-    # New price in Japan (brains.retail_price): independent of scouts, so it runs alongside them.
-    retail_task = asyncio.create_task(_retail(query))
-    # scouts/README: call search BEFORE sold_prices — sold-out items spotted while
-    # searching are reused as sold prices, so these must not run in parallel.
-    listings = await _call(
-        SCOUT_NODE, "search", query=query, budget_jpy=budget_jpy, marketplaces=marketplaces
-    )
-    sold = await _call(SCOUT_NODE, "sold_prices", query=query, marketplaces=marketplaces)
-    comps = await _call(BRAIN_NODE, "comps", sold=sold)
-    retail = await retail_task
-    verdicts = await _call(BRAIN_NODE, "evaluate", listings=listings, comps=comps, retail=retail)
-    ranked = await _call(BRAIN_NODE, "rank", listings=listings, verdicts=verdicts)
-    return {"comps": comps, "ranked": ranked, "retail": retail,
-            "stats": _stats(query, budget_jpy, listings, sold, ranked)}
+    mode = "fake" if USE_FAKE_DATA else "demo" if DEMO_MODE else "live"
+    with obs.run("buy", query=query, budget_jpy=budget_jpy, mode=mode) as rid:
+        if USE_FAKE_DATA:
+            data = _load_fake()
+            result = {
+                "comps": data["comps"],
+                "ranked": data["ranked"],
+                "stats": _stats(query, budget_jpy, data["listings"], data["sold"], data["ranked"]),
+            }
+        elif DEMO_MODE:
+            result = _load_demo("buy")
+        else:
+            marketplaces = list(MARKETPLACES)
+            # New price in Japan (brains.retail_price): independent of scouts, runs alongside them.
+            retail_task = asyncio.create_task(_retail(query))
+            # scouts/README: call search BEFORE sold_prices — sold-out items spotted while
+            # searching are reused as sold prices, so these must not run in parallel.
+            listings = await _call(
+                SCOUT_NODE, "search", query=query, budget_jpy=budget_jpy, marketplaces=marketplaces
+            )
+            sold = await _call(SCOUT_NODE, "sold_prices", query=query, marketplaces=marketplaces)
+            comps = await _call(BRAIN_NODE, "comps", sold=sold)
+            retail = await retail_task
+            verdicts = await _call(BRAIN_NODE, "evaluate", listings=listings, comps=comps, retail=retail)
+            ranked = await _call(BRAIN_NODE, "rank", listings=listings, verdicts=verdicts)
+            result = {"comps": comps, "ranked": ranked, "retail": retail,
+                      "stats": _stats(query, budget_jpy, listings, sold, ranked)}
+        result["_run_id"] = rid  # private: lets new_run() reuse the obs run_id
+        obs.emit("run_finished", **_buy_counts(result, mode))
+        return result
 
 
 async def _retail(query: str) -> dict | None:
@@ -194,26 +224,32 @@ async def _retail(query: str) -> dict | None:
 
 async def run_sell(item: str) -> dict:
     """-> {"asking_price_jpy", "draft_listing", "comps"}"""
-    if USE_FAKE_DATA:
-        comps = _load_fake()["comps"]
-        median = comps[0]["median_jpy"] if comps else 0
-        return {
-            "asking_price_jpy": int(median * 1.05),
-            "draft_listing": (
-                f"【美品】{item}\n\n動作確認済み。目立った傷なし。\n"
-                "元箱・付属品付き。発送は24時間以内。\n"
-                "ご質問はお気軽にどうぞ。"
-            ),
-            "comps": comps,
-        }
-    if DEMO_MODE:
-        return _load_demo("sell")
-
-    retail_task = asyncio.create_task(_retail(item))
-    sold = await _call(SCOUT_NODE, "sold_prices", query=item, marketplaces=list(MARKETPLACES))
-    comps = await _call(BRAIN_NODE, "comps", sold=sold)
-    advice = await _call(BRAIN_NODE, "sell_advice", item=item, comps=comps, retail=await retail_task)
-    return {**advice, "comps": comps}
+    mode = "fake" if USE_FAKE_DATA else "demo" if DEMO_MODE else "live"
+    with obs.run("sell", query=item, mode=mode):
+        if USE_FAKE_DATA:
+            comps = _load_fake()["comps"]
+            median = comps[0]["median_jpy"] if comps else 0
+            result = {
+                "asking_price_jpy": int(median * 1.05),
+                "draft_listing": (
+                    f"【美品】{item}\n\n動作確認済み。目立った傷なし。\n"
+                    "元箱・付属品付き。発送は24時間以内。\n"
+                    "ご質問はお気軽にどうぞ。"
+                ),
+                "comps": comps,
+            }
+        elif DEMO_MODE:
+            result = _load_demo("sell")
+        else:
+            retail_task = asyncio.create_task(_retail(item))
+            sold = await _call(SCOUT_NODE, "sold_prices", query=item, marketplaces=list(MARKETPLACES))
+            comps = await _call(BRAIN_NODE, "comps", sold=sold)
+            advice = await _call(BRAIN_NODE, "sell_advice", item=item, comps=comps, retail=await retail_task)
+            result = {**advice, "comps": comps}
+        obs.emit("run_finished", op="sell", mode=mode, query=item,
+                 asking_price_jpy=result.get("asking_price_jpy"),
+                 marketplaces=len(result.get("comps") or []))
+        return result
 
 
 # ---------------------------------------------------------------- AgentField entrypoint

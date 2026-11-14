@@ -1,10 +1,12 @@
 """Telegram handlers: /buy, /sell, and the Approve / Send offer / Skip buttons."""
 from __future__ import annotations
 
+import asyncio
 import re
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
+import obs
 import orchestrator
 from bot import photos, render
 
@@ -86,14 +88,17 @@ async def on_button(update, context):
     action, _, run_id = (query.data or "").partition(":")
     run = orchestrator.get_run(run_id)
     if run is None:
+        obs.emit("button", action="expired", run_id=run_id)
         await query.message.reply_text("That search expired — run /buy again.")
         return
     top = (run["result"].get("ranked") or {}).get("top") or []
     first = top[0] if top else {}
 
     if action == "approve":
-        if orchestrator.approve(run_id):
-            offer = (first.get("verdict") or {}).get("suggested_offer_jpy")
+        ok = orchestrator.approve(run_id)
+        offer = (first.get("verdict") or {}).get("suggested_offer_jpy")
+        obs.emit("button", action="approve", ok=ok, run_id=run_id, offer_jpy=offer)
+        if ok:
             price = f" at ¥{offer:,}" if isinstance(offer, int) else ""
             await query.message.reply_text(
                 f"✅ Approved #1{price}. Tap 💬 Send offer for the draft — "
@@ -103,6 +108,7 @@ async def on_button(update, context):
             await query.message.reply_text("Already handled.")
     elif action == "offer":
         draft = first.get("draft_message")
+        obs.emit("button", action="offer", run_id=run_id, has_draft=bool(draft))
         if draft:
             text = "💬 Draft for #1 — copy & send on the marketplace:\n\n" + draft
             url = (first.get("listing") or {}).get("url")
@@ -116,5 +122,16 @@ async def on_button(update, context):
         else:
             await query.message.reply_text("No draft available for this search.")
     elif action == "skip":
-        orchestrator.skip(run_id)
+        ok = orchestrator.skip(run_id)
+        obs.emit("button", action="skip", ok=ok, run_id=run_id)
         await query.message.reply_text("❌ Skipped.")
+
+
+async def stats(update, context):
+    """Telegram /stats — recent runs + counters from the obs log."""
+    try:
+        events = await asyncio.to_thread(obs.read_events, 2000)
+        text = obs.summary_text(events)
+    except Exception:
+        text = "Stats unavailable."
+    await update.message.reply_text(text)

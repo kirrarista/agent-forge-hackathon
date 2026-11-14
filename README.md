@@ -28,7 +28,7 @@ Fill in `.env`. Which keys you need depends on what you run:
 | `TELEGRAM_BOT_TOKEN` | Always (create the bot with @BotFather) |
 | `TAVILY_API_KEY` | Live search (`USE_FAKE_DATA=0`) |
 | `DAYTONA_API_KEY` | Puppeteer fallback for pages Tavily can't read (optional) |
-| `ANTHROPIC_API_KEY`, or `AI_MODEL` + its key (e.g. `gpt-4o` + `OPENAI_API_KEY`) | AI pros/cons and draft messages. Without one, brains runs rules-only. |
+| `OPENROUTER_API_KEY` (+ optional `OPENROUTER_MODEL`, default `anthropic/claude-haiku-5.5`) | AI pros/cons, draft listings. Without it, brains runs rules-only. |
 
 ## Run it
 

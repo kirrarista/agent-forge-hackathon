@@ -16,16 +16,24 @@ sold     = await scouts.sold_prices("Sony A7III", ["mercari", "yahoo_auctions", 
 scouts.LAST_RUN  # {"marketplaces", "listings", "sold", "rejected", "rejections": [...], "errors": {...}}
 ```
 
-- Call `search` before `sold_prices`: sold-out items spotted while searching are reused as sold prices.
+- Running `search` and `sold_prices` in parallel is fine: `sold_prices` waits for an in-flight search of
+  the same query, so sold-out items spotted while searching still count as sold prices.
 - `LAST_RUN` gives the header line counts ("Searched 4 marketplaces · 63 listings · 41 sold prices · 11 rejected").
+  `rejected` here is scout-side rejections (accessories, other models, over budget, already sold).
 - One marketplace failing never raises; it shows up in `LAST_RUN["errors"]` and the rest still return.
-- `DEMO_MODE=1` serves `demo_data/listings.json` and `demo_data/sold.json` instead of hitting the sites.
+- `USE_AGENTFIELD=1`: run `python -m scouts.node` (node id `scouts`, port `SCOUTS_PORT`=8002). Reasoners
+  `search` / `sold_prices` match `app.call("scouts.<fn>")`; `last_run` returns the counts.
+- `python -m scouts save "<item>" --budget <yen>` writes everything the offline demo needs to `demo_data/`:
+  `buy.json` / `sell.json` (what orchestrator `DEMO_MODE=1` serves, built by running brains on the real
+  results), plus raw `listings.json` / `sold.json` (what scouts' own `DEMO_MODE=1` and `python -m brains` read).
 
 ## For Kiril (brains)
 
 - Any field not found is `null`. A `null` seller field means "not visible on the page", not "new account".
 - `seller.rating` is on a 0-5 scale. Yahoo/eBay "% positive" is converted as `% / 20` (99% → 4.95).
 - `seller.account_age` is a raw string when found ("Mar 2014", "2023年5月"), usually `null` on Mercari.
+  (brains parses these. Note `schemas.py` / `fake_data.json` use int days, while brains reads numbers as months.)
+- `title` is always a string (`""` if not found).
 - `description` is the page text (up to 3,000 chars), so LINE / bank transfer / ジャンク checks can run on it.
 - eBay prices are converted at `USD_JPY` (env, default 150), item price only, shipping not included.
 

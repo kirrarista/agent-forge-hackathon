@@ -148,7 +148,7 @@ def to_listing(*, site: Site, url: str, title: str | None, text: str | None,
         "id": f"{site.key}:{item_id}",
         "marketplace": site.key,
         "url": url,
-        "title": clean_title(title),
+        "title": clean_title(title) or "",  # schemas.Listing.title is str
         "price_jpy": find_price(body, site.currency),
         "condition": find_condition(body),
         "seller": find_seller(body),
@@ -158,7 +158,7 @@ def to_listing(*, site: Site, url: str, title: str | None, text: str | None,
 
 
 def to_sold(*, site: Site, url: str, title: str | None, price_jpy: int | None) -> dict:
-    return {"marketplace": site.key, "title": clean_title(title), "price_jpy": price_jpy, "url": url}
+    return {"marketplace": site.key, "title": clean_title(title) or "", "price_jpy": price_jpy, "url": url}
 
 
 def sold_from_results_page(text: str, site: Site) -> list[dict]:

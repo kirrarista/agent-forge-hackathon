@@ -152,8 +152,15 @@ async def _site_listings(site: Site, query: str, budget_jpy: int | None,
     return out
 
 
-# Sold items spotted while searching for live listings, reused by sold_prices().
-_sold_seen: dict[str, dict] = {}
+# Sold items spotted while searching for live listings, reused by sold_prices(): query key → url → SoldItem.
+_sold_seen: dict[str, dict[str, dict]] = {}
+# search() runs in flight per query, so a sold_prices() started at the same time (the orchestrator
+# gathers both) can wait for it and still pick up those sold items.
+_inflight: dict[str, asyncio.Task] = {}
+
+
+def _qkey(query: str) -> str:
+    return parse._norm(query)
 
 
 async def search(query: str, budget_jpy: int | None = None,
@@ -167,6 +174,18 @@ async def search(query: str, budget_jpy: int | None = None,
         LAST_RUN.update(marketplaces=len(sites), listings=len(listings), rejected=0, rejections=[], errors={})
         return listings
 
+    # Registered before the first await, so a sold_prices() gathered alongside always sees it.
+    key = _qkey(query)
+    task = asyncio.ensure_future(_search(query, budget_jpy, sites))
+    _inflight[key] = task
+    try:
+        return await task
+    finally:
+        if _inflight.get(key) is task:
+            del _inflight[key]
+
+
+async def _search(query: str, budget_jpy: int | None, sites: list[Site]) -> list[dict]:
     rejections: list = []
     sold_out: list = []
     results = await asyncio.gather(
@@ -179,8 +198,9 @@ async def search(query: str, budget_jpy: int | None = None,
             errors[site.key] = repr(r)[:200]
         else:
             listings.extend(r)
+    seen = _sold_seen.setdefault(_qkey(query), {})
     for s in sold_out:
-        _sold_seen[s["url"]] = s
+        seen[s["url"]] = s
     LAST_RUN.update(marketplaces=len(sites), listings=len(listings), rejected=len(rejections),
                     rejections=rejections, errors=errors)
     return listings
@@ -189,7 +209,7 @@ async def search(query: str, budget_jpy: int | None = None,
 # ---------- sold prices ----------
 
 async def _site_sold(site: Site, query: str) -> list[dict]:
-    sold: list[dict] = [s for s in _sold_seen.values() if s["marketplace"] == site.key]
+    sold: list[dict] = []
     url = site.sold_url(query)
     if url:
         page = (await _extract([url])).get(url)
@@ -203,6 +223,11 @@ async def _site_sold(site: Site, query: str) -> list[dict]:
                         found.append(parse.to_sold(site=site, url=it["url"], title=it.get("title"),
                                                    price_jpy=price))
         sold.extend(found)
+    # Sold-out items search() came across (wait for a search of the same query still running).
+    inflight = _inflight.get(_qkey(query))
+    if inflight is not None:
+        await asyncio.wait([inflight])  # its errors are search()'s to report
+    sold.extend(s for s in _sold_seen.get(_qkey(query), {}).values() if s["marketplace"] == site.key)
     # Keep only the item asked for (drop accessories / other models), dedupe by url.
     out, seen = [], set()
     for s in sold:
@@ -243,13 +268,34 @@ def _load_demo(kind: str, sites: list[Site]) -> list[dict]:
     return [x for x in json.loads(path.read_text()) if x.get("marketplace") in keys]
 
 
-async def save_demo(query: str, budget_jpy: int | None, marketplaces: list[str] | None = None) -> dict:
-    """Run a real search and write demo_data/{listings,sold}.json for offline demos."""
-    listings = await search(query, budget_jpy, marketplaces)
-    sold = await sold_prices(query, marketplaces)
+def _write(name: str, data) -> None:
+    (DEMO_DIR / name).write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+async def save_demo(query: str, budget_jpy: int | None, marketplaces: list[str] | None = None,
+                    sell_item: str | None = None) -> dict:
+    """Run a real search and save everything the offline demo needs:
+      demo_data/listings.json, sold.json   raw scout output (brains' `python -m brains` reads these)
+      demo_data/buy.json, sell.json        BuyResult / SellResult that orchestrator DEMO_MODE=1 serves
+    """
+    import brains  # Kiril's; imported here so scouts works on its own without it
+
+    listings, sold = await asyncio.gather(search(query, budget_jpy, marketplaces),
+                                          sold_prices(query, marketplaces))
+    stats_scouts = {k: v for k, v in LAST_RUN.items() if k != "rejections"}
+    comps = brains.comps(sold)
+    verdicts = await brains.evaluate(listings, comps)
+    ranked = await brains.rank(listings, verdicts)
+    advice = await brains.sell_advice(sell_item or query, comps)
+
+    stats = {"query": query, "budget_jpy": budget_jpy,
+             "marketplaces": stats_scouts["marketplaces"], "listings": len(listings), "sold": len(sold),
+             "rejected": stats_scouts["rejected"] + len(ranked.get("skipped") or [])}
     DEMO_DIR.mkdir(exist_ok=True)
-    (DEMO_DIR / "listings.json").write_text(json.dumps(listings, ensure_ascii=False, indent=2))
-    (DEMO_DIR / "sold.json").write_text(json.dumps(sold, ensure_ascii=False, indent=2))
-    meta = {"query": query, "budget_jpy": budget_jpy, **{k: v for k, v in LAST_RUN.items() if k != "rejections"}}
-    (DEMO_DIR / "meta.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2))
+    _write("listings.json", listings)
+    _write("sold.json", sold)
+    _write("buy.json", {"comps": comps, "ranked": ranked, "stats": stats})
+    _write("sell.json", {**advice, "comps": comps})
+    meta = {**stats, "top": len(ranked.get("top") or []), "errors": stats_scouts.get("errors", {})}
+    _write("meta.json", meta)
     return meta

@@ -173,6 +173,54 @@ def test_one_marketplace_failing_does_not_break_others(fake, monkeypatch):
     assert "jimoty" in core.LAST_RUN["errors"]
 
 
+def test_parallel_sold_prices_still_gets_sold_items_from_search(fake):
+    """The orchestrator gathers search and sold_prices; sold-out items found by search must still count."""
+    async def both():
+        return await asyncio.gather(core.search("Sony A7III", 90_000, ["mercari"]),
+                                    core.sold_prices("Sony A7III", ["mercari"]))
+    listings, sold = asyncio.run(both())
+    assert len(listings) == 1
+    assert sorted(s["price_jpy"] for s in sold) == [95000, 99000]
+
+
+def test_save_demo_writes_orchestrator_files(fake, tmp_path, monkeypatch):
+    import json, sys, types
+    stub = types.ModuleType("brains")
+    stub.comps = lambda sold: [{"marketplace": "mercari", "median_jpy": 97000, "p25_jpy": 95000,
+                                "p75_jpy": 99000, "n_sold": len(sold), "sample_urls": []}]
+
+    async def evaluate(listings, comps):
+        return [{"listing_id": l["id"], "risk": "ok", "deal_score": 80, "pros": [], "cons": [],
+                 "suggested_offer_jpy": 72000} for l in listings]
+
+    async def rank(listings, verdicts):
+        return {"top": [{"listing": listings[0], "verdict": verdicts[0], "draft_message": "x"}], "skipped": []}
+
+    async def sell_advice(item, comps):
+        return {"asking_price_jpy": 97000, "draft_listing": f"【美品】{item}"}
+
+    stub.evaluate, stub.rank, stub.sell_advice = evaluate, rank, sell_advice
+    monkeypatch.setitem(sys.modules, "brains", stub)
+    monkeypatch.setattr(core, "DEMO_DIR", tmp_path)
+
+    meta = asyncio.run(core.save_demo("Sony A7III", 90_000, ["mercari"]))
+    buy = json.loads((tmp_path / "buy.json").read_text())
+    sell = json.loads((tmp_path / "sell.json").read_text())
+    assert set(buy) == {"comps", "ranked", "stats"}
+    assert set(buy["stats"]) == {"query", "budget_jpy", "marketplaces", "listings", "sold", "rejected"}
+    assert buy["stats"]["listings"] == 1 and buy["stats"]["sold"] == 2 and buy["stats"]["rejected"] == 3
+    assert {"asking_price_jpy", "draft_listing", "comps"} <= set(sell)
+    assert (tmp_path / "listings.json").exists() and (tmp_path / "sold.json").exists()
+    assert meta["top"] == 1
+
+
+def test_node_registers_reasoners():
+    pytest.importorskip("agentfield")
+    from scouts import node
+    assert callable(node.search) and callable(node.sold_prices)
+    assert node.app.node_id == "scouts"
+
+
 def test_demo_mode(tmp_path, monkeypatch):
     import json
     (tmp_path / "listings.json").write_text(json.dumps([

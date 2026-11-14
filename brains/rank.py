@@ -38,7 +38,8 @@ def draft_message(listing: dict, verdict: dict) -> str:
 
 async def rank(listings: list[dict], verdicts: list[dict]) -> dict:
     by_id = {l.get("id"): l for l in listings or []}
-    pairs = [(by_id[v["listing_id"]], v) for v in verdicts or [] if v.get("listing_id") in by_id]
+    pairs = [(by_id[v["listing_id"]], v) for v in verdicts or []
+             if v.get("listing_id") in by_id and not v.get("sold")]  # sold items are dropped entirely
 
     # best score first; a sketchy listing needs a 10-point lead to beat a clean one
     good = sorted((p for p in pairs if p[1]["risk"] != "scam"),

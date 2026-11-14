@@ -11,6 +11,8 @@ from __future__ import annotations
 import re
 from datetime import date
 
+from .photos import product_photos
+
 
 def flag(rule: str, level: str, en: str, ja: str = "") -> dict:
     return {"rule": rule, "level": level, "en": en, "ja": ja}
@@ -129,7 +131,7 @@ def listing_quality(listing: dict) -> list[dict]:
         out.append(flag("vague", "sketchy", "vague description", "説明が少ない"))
     if _STOCK.search(_text(listing)):
         out.append(flag("stock_photos", "sketchy", "uses stock photos, not the actual item", "写真がイメージ画像"))
-    if not listing.get("image_urls"):
+    if not product_photos(listing):
         out.append(flag("no_photos", "info", "no photos found", "写真が見当たらない"))
     return out
 
@@ -153,7 +155,7 @@ def hidden_condition(listing: dict) -> list[dict]:
 # ---------- reused photos ----------
 
 def reused_photos(listing: dict, all_listings: list[dict]) -> list[dict]:
-    mine = set(listing.get("image_urls") or [])
+    mine = set(product_photos(listing))  # ignore logos/icons every page on a site shares
     if not mine:
         return []
     my_seller = (listing.get("seller") or {}).get("name")
@@ -163,9 +165,34 @@ def reused_photos(listing: dict, all_listings: list[dict]) -> list[dict]:
         other_seller = (other.get("seller") or {}).get("name")
         if my_seller and other_seller and my_seller == other_seller:
             continue  # same seller reusing their own photos is fine
-        if mine & set(other.get("image_urls") or []):
+        if mine & set(product_photos(other)):
             return [flag("reused_photos", "sketchy", "same photos used in another listing", "他の出品と同じ写真")]
     return []
+
+
+# ---------- already sold / ended ----------
+
+# Strong phrases only: page chrome (recommended-item badges) also says "SOLD" / 売り切れ.
+_SOLD = {
+    "mercari": r"売り切れました|この商品は売り切れ|購入手続き中|取引中です",
+    "yahoo_auctions": r"このオークションは終了|オークションは終了しました|落札者[：:]|落札されました|"
+                      r"このオークションは出品者によって取り消され",
+    "jimoty": r"掲載期間が終了|取引終了|受付終了|募集終了|掲載終了|取引中",
+    "ebay": r"This listing sold on|This listing was ended|Bidding has ended|This item is out of stock|"
+            r"This listing has ended|item is no longer available",
+}
+_SOLD_ANY = r"売約済|売却済|完売しました|^\s*[【\[(]?\s*SOLD(?:\s*OUT)?\s*[】\])]?"
+
+
+def is_sold(listing: dict) -> bool:
+    """True if the listing page says it's sold / ended / reserved. Scouts already drops most of these;
+    this is the last guard so the bot never recommends something you can't buy."""
+    if listing.get("_sold") or listing.get("sold"):
+        return True
+    rx = _SOLD.get(listing.get("marketplace") or "", "")
+    rx = f"{rx}|{_SOLD_ANY}" if rx else _SOLD_ANY
+    title = listing.get("title") or ""
+    return bool(re.search(rx, f"{title}\n{clean(listing.get('description'))}", re.I | re.M))
 
 
 # ---------- combine ----------

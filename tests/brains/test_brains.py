@@ -85,3 +85,35 @@ def test_page_chrome_ignored():
          "description": desc, "image_urls": ["a"]}
     flags = scam.check(l, None, [l])
     assert not [f for f in flags if f["level"] in ("scam", "sketchy")], flags
+
+
+def _listing(**kw):
+    base = {"id": "mercari:s1", "marketplace": "mercari", "url": "u", "title": "Sony α7III", "price_jpy": 80000,
+            "condition": None, "seller": {"name": "a", "rating": 4.9, "review_count": 100, "account_age": None},
+            "description": "シャッター回数約2,400回。元箱・バッテリー・充電器付き。動作確認済みです。", "image_urls": []}
+    return base | kw
+
+
+def test_sold_items_never_recommended():
+    comps = brains.comps(DATA["sold"])
+    sold_ones = [
+        _listing(id="mercari:s1", description=_listing()["description"] + "\nこの商品は売り切れました"),
+        _listing(id="yahoo_auctions:s2", marketplace="yahoo_auctions", description="このオークションは終了しています 落札者：abc"),
+        _listing(id="ebay:s3", marketplace="ebay", description="Sony A7III body. This listing sold on Nov 10."),
+        _listing(id="mercari:s4", title="【SOLD】Sony α7III"),
+    ]
+    live = _listing(id="mercari:ok", description=_listing()["description"] + "\nおすすめ商品 売り切れ SOLD")  # chrome badges
+    listings = sold_ones + [live]
+    verdicts = run(brains.evaluate(listings, comps))
+    ranked = run(brains.rank(listings, verdicts))
+    ids = {t["listing"]["id"] for t in ranked["top"]} | {s["listing"]["id"] for s in ranked["skipped"]}
+    assert ids == {"mercari:ok"}, ids
+
+
+def test_retail_in_verdict_and_sell_cap():
+    comps = brains.comps(DATA["sold"])
+    v = run(brains.evaluate([_listing()], comps, retail={"price_jpy": 200000, "source": "kakaku.com"}))[0]
+    assert v["new_price_jpy"] == 200000 and v["sold_median_jpy"]
+    assert any("below the new price" in p for p in v["pros"])
+    out = run(brains.sell_advice("x", comps, retail={"price_jpy": 90000}))
+    assert out["asking_price_jpy"] <= 90000 * 0.9

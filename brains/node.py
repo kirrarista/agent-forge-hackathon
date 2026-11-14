@@ -30,8 +30,8 @@ async def comps(sold: list[dict]) -> list[dict]:
 
 
 @app.reasoner(tags=["brains", "scam-check"])
-async def evaluate(listings: list[dict], comps: list[dict]) -> list[dict]:
-    return await brains.evaluate(listings, comps)
+async def evaluate(listings: list[dict], comps: list[dict], retail: dict | None = None) -> list[dict]:
+    return await brains.evaluate(listings, comps, retail)
 
 
 @app.reasoner(tags=["brains", "ranking"])
@@ -40,8 +40,13 @@ async def rank(listings: list[dict], verdicts: list[dict]) -> dict:
 
 
 @app.reasoner(tags=["brains", "sell"])
-async def sell_advice(item: str, comps: list[dict]) -> dict:
-    return await brains.sell_advice(item, comps)
+async def sell_advice(item: str, comps: list[dict], retail: dict | None = None) -> dict:
+    return await brains.sell_advice(item, comps, retail)
+
+
+@app.reasoner(tags=["brains", "retail-price"])
+async def retail_price(query: str) -> dict | None:
+    return await brains.retail_price(query)
 
 
 if __name__ == "__main__":
